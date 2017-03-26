@@ -5,3 +5,18 @@
 <!---
 Read Me Contents
 -->
+
+Google Dinosaur Source Code (2698 lines of code)
+https://chromium.googlesource.com/chromium/src.git/+/master/components/neterror/resources/offline.js
+
+Scoring
+1) Distance Score
+2) High Score
+
+This game utilizes a technique known as the 'module pattern' to create game objects and organize the code
+
+Parallax background
+
+Deliverables
+1) A panning background (hopefully with different images that scroll at different rates)
+2) Day and night sequences like the google game
