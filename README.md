@@ -13,9 +13,10 @@ Scoring
 1) Distance Score
 2) High Score
 
-This game utilizes a technique known as the 'module pattern' to create game objects and organize the code
+Techniques
+1) This game utilizes a technique known as the 'module pattern' to create game objects and organize the code
+2) Parallax background
 
-Parallax background
 
 Deliverables
 1) A panning background (hopefully with different images that scroll at different rates)

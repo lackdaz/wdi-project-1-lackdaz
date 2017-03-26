@@ -1,162 +1,164 @@
-(function() {
-  // define variables
-  var canvas = document.getElementById("canvas");
-  var ctx = canvas.getContext("2d");
-  var player = {};
-  var ground = [];
-  var platformWidth = 32;
-  var platformHeight = canvas.height - platformWidth * 4;
-  /**
-   * Request Animation Polyfill
-   */
-  var requestAnimFrame = (function() {
-    return window.requestAnimationFrame ||
-      window.webkitRequestAnimationFrame ||
-      window.mozRequestAnimationFrame ||
-      window.oRequestAnimationFrame ||
-      window.msRequestAnimationFrame ||
-      function(callback, element) {
-        window.setTimeout(callback, 1000 / 60);
-      };
-  })();
-  /*
-    Asset pre-loader object. Loads all images
-    */
-  var assetLoader = (function() {
-    // images dictionary
-    this.imgs = {
-      "bg": "imgs/bg.png",
-      "sky": "imgs/sky.png"
-    };
-    var assetsLoaded = 0; // how many assets have been loaded
-    var numImgs = Object.keys(this.imgs).length; // total number of image assets
-    this.totalAssets = numImgs; // total number of assets
-    /**
-     * Ensure all assets are loaded before using them
-     * @param {number} dic  - Dictionary name ('imgs')
-     * @param {number} name - Asset name in the dictionary
-     */
-    function assetLoaded(dic, name) {
-      // don't count assets that have already loaded
-      if (this[dic][name].status !== "loading") {
-        return;
-      }
-      this[dic][name].status = "loaded";
-      assetsLoaded++;
+/***************
+ * PART ONE - Setting up the structure of the game and panning
+ * a background
+ ***************/
 
-      // finished callback
-      if (assetsLoaded === this.totalAssets && typeof this.finished === "function") {
-        this.finished();
-      }
-    }
-    /**
-     * Create assets, set callback for asset loading, set asset source
-     */
-    this.downloadAll = function() {
-      var _this = this;
-      var src;
-      // load images
-      for (var img in this.imgs) {
-        if (this.imgs.hasOwnProperty(img)) {
-          src = this.imgs[img];
-          // create a closure for event binding
-          (function(_this, img) {
-            _this.imgs[img] = new Image();
-            _this.imgs[img].status = "loading";
-            _this.imgs[img].name = img;
-            _this.imgs[img].onload = function() {
-              assetLoaded.call(_this, "imgs", img)
-            };
-            _this.imgs[img].src = src;
-          })(_this, img);
-        }
-      }
-    }
-    return {
-      imgs: this.imgs,
-      totalAssets: this.totalAssets,
-      downloadAll: this.downloadAll
-    };
-  });
-  assetLoader.finished = function() {
-    startGame();
-  }
-})
-// Runner.spriteDefinition = {
-//   LDPI: {
-//     CACTUS_LARGE: {x: 332, y: 2},
-//     CACTUS_SMALL: {x: 228, y: 2},
-//     CLOUD: {x: 86, y: 2},
-//     HORIZON: {x: 2, y: 54},
-//     MOON: {x: 484, y: 2},
-//     PTERODACTYL: {x: 134, y: 2},
-//     RESTART: {x: 2, y: 2},
-//     TEXT_SPRITE: {x: 655, y: 2},
-//     TREX: {x: 848, y: 2},
-//     STAR: {x: 645, y: 2}
-//   },
-//   HDPI: {
-//     CACTUS_LARGE: {x: 652, y: 2},
-//     CACTUS_SMALL: {x: 446, y: 2},
-//     CLOUD: {x: 166, y: 2},
-//     HORIZON: {x: 2, y: 104},
-//     MOON: {x: 954, y: 2},
-//     PTERODACTYL: {x: 260, y: 2},
-//     RESTART: {x: 2, y: 2},
-//     TEXT_SPRITE: {x: 1294, y: 2},
-//     TREX: {x: 1678, y: 2},
-//     STAR: {x: 1276, y: 2}
-//   }
-// };
-
-/**
- * Create a parallax background
+/* NOTES TO REMEMBER
+ * 1. A variable declared private (with the var syntax) cannot be referenced from a public function declared with the prototype syntax
+ * 2. Drawing an image once does not keep it on the canvas (it disapears for some reason). REASON - the image is not loaded when the
+ *    call to draw it is called, so nothing is drawn.
+ * 3. A vairable declared public (with the this syntax) must always be referenced with the this syntax when using it
  */
 
-var background = (function() {
-  var sky   = {};
-  var backdrop = {};
-  var backdrop2 = {};
-  /**
-   * Draw the backgrounds to the screen at different speeds
-   */
-  this.draw = function() {
-    ctx.drawImage(assetLoader.imgs.bg, 0, 0);
-    // Pan background
-    sky.x -= sky.speed;
-    backdrop.x -= backdrop.speed;
-    backdrop2.x -= backdrop2.speed;
-    // draw images side by side to loop
-    ctx.drawImage(assetLoader.imgs.sky, sky.x, sky.y);
-    ctx.drawImage(assetLoader.imgs.sky, sky.x + canvas.width, sky.y);
-    ctx.drawImage(assetLoader.imgs.backdrop, backdrop.x, backdrop.y);
-    ctx.drawImage(assetLoader.imgs.backdrop, backdrop.x + canvas.width, backdrop.y);
-    ctx.drawImage(assetLoader.imgs.backdrop2, backdrop2.x, backdrop2.y);
-    ctx.drawImage(assetLoader.imgs.backdrop2, backdrop2.x + canvas.width, backdrop2.y);
-    // If the image scrolled off the screen, reset
-    if (sky.x + assetLoader.imgs.sky.width <= 0)
-      sky.x = 0;
-    if (backdrop.x + assetLoader.imgs.backdrop.width <= 0)
-      backdrop.x = 0;
-    if (backdrop2.x + assetLoader.imgs.backdrop2.width <= 0)
-      backdrop2.x = 0;
-  };
-  /**
-   * Reset background to zero
-   */
-  this.reset = function()  {
-    sky.x = 0;
-    sky.y = 0;
-    sky.speed = 0.2;
-    backdrop.x = 0;
-    backdrop.y = 0;
-    backdrop.speed = 0.4;
-    backdrop2.x = 0;
-    backdrop2.y = 0;
-    backdrop2.speed = 0.6;
-  }
-  return {
-    draw: this.draw,
-    reset: this.reset
-  };
-});
+/* RESOURCES
+ * 1. http://paulirish.com/2011/requestanimationframe-for-smart-animating/
+ * 2. http://net.tutsplus.com/tutorials/javascript-ajax/prototypes-in-javascript-what-you-need-to-know/
+ * 3. http://phrogz.net/js/classes/OOPinJS.html
+ * 4. http://www.phpied.com/3-ways-to-define-a-javascript-class/
+ */
+
+
+/**
+ * Initialize the Game and starts it.
+ */
+var game = new Game();
+
+function init() {
+	if(game.init())
+		game.start();
+}
+
+/**
+ * Define an object to hold all our images for the game so images
+ * are only ever created once. This type of object is known as a
+ * singleton.
+ */
+var imageRepository = new function() {
+	// Define images
+	this.empty = null;
+	this.background = new Image();
+
+	// Set images src
+	this.background.src = "assets/images/bg.png";
+}
+
+
+/**
+ * Creates the Drawable object which will be the base class for
+ * all drawable objects in the game. Sets up defualt variables
+ * that all child objects will inherit, as well as the defualt
+ * functions.
+ */
+function Drawable() {
+	this.init = function(x, y) {
+		// Defualt variables
+		this.x = x;
+		this.y = y;
+	}
+
+	this.speed = 0;
+	this.canvasWidth = 0;
+	this.canvasHeight = 0;
+
+	// Define abstract function to be implemented in child objects
+	this.draw = function() {
+	};
+}
+
+
+/**
+ * Creates the Background object which will become a child of
+ * the Drawable object. The background is drawn on the "background"
+ * canvas and creates the illusion of moving by panning the image.
+ */
+function Background() {
+	this.speed = 1; // Redefine speed of the background for panning
+
+	// Implement abstract function
+	this.draw = function() {
+		// Pan background
+		this.x -= this.speed; //reverse this to move left
+
+		this.context.drawImage(imageRepository.background, this.x, this.y);
+
+		// Draw another image at the right edge of the first image
+		this.context.drawImage(imageRepository.background, this.x - this.canvasWidth, this.y);
+
+		// If the image scrolled off the screen, reset
+		if (this.x <= -(this.canvasWidth))
+			this.x = 0;
+	};
+}
+// Set Background to inherit properties from Drawable
+Background.prototype = new Drawable();
+
+
+/**
+ * Creates the Game object which will hold all objects and data for
+ * the game.
+ */
+function Game() {
+	/*
+	 * Gets canvas information and context and sets up all game
+	 * objects.
+	 * Returns true if the canvas is supported and false if it
+	 * is not. This is to stop the animation script from constantly
+	 * running on older browsers.
+	 */
+	this.init = function() {
+		// Get the canvas element
+		this.bgCanvas = document.getElementById('background');
+
+		// Test to see if canvas is supported
+		if (this.bgCanvas.getContext) {
+			this.bgContext = this.bgCanvas.getContext('2d');
+
+			// Initialize objects to contain their context and canvas
+			// information
+			Background.prototype.context = this.bgContext;
+			Background.prototype.canvasWidth = this.bgCanvas.width;
+			Background.prototype.canvasHeight = this.bgCanvas.height;
+
+			// Initialize the background object
+			this.background = new Background();
+			this.background.init(0,0); // Set draw point to 0,0
+			return true;
+		} else {
+			return false;
+		}
+	};
+
+	// Start the animation loop
+	this.start = function() {
+		animate();
+	};
+}
+
+
+/**
+ * The animation loop. Calls the requestAnimationFrame shim to
+ * optimize the game loop and draws all game objects. This
+ * function must be a gobal function and cannot be within an
+ * object.
+ */
+function animate() {
+	requestAnimFrame( animate );
+	game.background.draw();
+}
+
+
+/**
+ * requestAnim shim layer by Paul Irish
+ * Finds the first API that works to optimize the animation loop,
+ * otherwise defaults to setTimeout().
+ */
+window.requestAnimFrame = (function(){
+	return  window.requestAnimationFrame       ||
+			window.webkitRequestAnimationFrame ||
+			window.mozRequestAnimationFrame    ||
+			window.oRequestAnimationFrame      ||
+			window.msRequestAnimationFrame     ||
+			function(/* function */ callback, /* DOMElement */ element){
+				window.setTimeout(callback, 1000 / 60);
+			};
+})();
