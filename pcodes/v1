@@ -1,290 +1,266 @@
-(function() {
-  // defining variables, use CAPS for static variables
-  var canvas = document.getElementById('canvas');
-  var ctx = canvas.getContext('2d');
-  var player = {};
-  var ground = [];
+/***************
+ Setting up the structure of the game and variables, CAPS for static variables
+ ***************/
+/**
+ * Initialize the Game and starts it.
+ */
+var game = new Game();
 
+function init() {
+	if(game.init())
+		game.start();
+}
 
+KEY_CODES = {
+  32: 'space',
+  38: 'up',
+  40: 'down',
+}
 
+// Create an object to check true/false. Initialize all values to false
+KEY_STATUS = {};
+for (code in KEY_CODES) {
+  KEY_STATUS[ KEY_CODES[ code ]] = false;
+}
 
-  var platformWidth = 32;
-  var platformHeight = canvas.height - platformWidth * 4;
-
-  /**
-   * Define an object to hold all our images for the game so images
-   * are only ever created once. This type of object is known as a
-   * singleton.
-   */
-  var imageRepository = new function() {
-    // Define images
-    this.background = new Image();
-    // Set images src
-    this.background.src = "imgs/bg.png";
+document.onkeydown = function(e) {
+  // Firefox and opera use charCode instead of keyCode to
+  // return which key was pressed.
+  var keyCode = (e.keyCode) ? e.keyCode : e.charCode;
+  if (KEY_CODES[keyCode]) {
+    e.preventDefault();
+    KEY_STATUS[KEY_CODES[keyCode]] = true;
   }
+}
 
-  /**
-   * Asset pre-loader object. Loads all images
-   */
-  var assetLoader = (function() {
-    // images dictionary
-    this.imgs = {
-      'bg': 'assets/images/bg.png',
-      // 'sky'           : 'imgs/sky.png',
-      // 'backdrop'      : 'imgs/backdrop.png',
-      // 'backdrop2'     : 'imgs/backdrop_ground.png',
-      'avatar_normal': "assets/images/rolling.png",
-      'grass': 'assets/images/grass.png'
-    };
-
-    var assetsLoaded = 0; // how many assets have been loaded
-    var numImgs = Object.keys(this.imgs).length; // total number of image assets
-    this.totalAssest = numImgs; // total number of assets
-
-    /**
-     * Ensure all assets are loaded before using them
-     * @param {number} dic  - Dictionary name ('imgs', 'sounds', 'fonts')
-     * @param {number} name - Asset name in the dictionary
-     */
-    function assetLoaded(dic, name) {
-      // don't count assets that have already loaded
-      if (this[dic][name].status !== 'loading') {
-        return;
-      }
-
-      this[dic][name].status = 'loaded';
-      assetsLoaded++;
-
-      // finished callback
-      if (assetsLoaded === this.totalAssest && typeof this.finished === 'function') {
-        this.finished();
-      }
-    }
-
-    /**
-     * Create assets, set callback for asset loading, set asset source
-     */
-    this.downloadAll = function() {
-      var _this = this;
-      var src;
-
-      // load images
-      for (var img in this.imgs) {
-        if (this.imgs.hasOwnProperty(img)) {
-          src = this.imgs[img];
-
-          // create a closure for event binding
-          (function(_this, img) {
-            _this.imgs[img] = new Image();
-            _this.imgs[img].status = 'loading';
-            _this.imgs[img].name = img;
-            _this.imgs[img].onload = function() {
-              assetLoaded.call(_this, 'imgs', img)
-            };
-            _this.imgs[img].src = src;
-          })(_this, img);
-        }
-      }
-    }
-
-    return {
-      imgs: this.imgs,
-      totalAssest: this.totalAssest,
-      downloadAll: this.downloadAll
-    };
-  })();
-
-  assetLoader.finished = function() {
-    startGame();
+document.onkeyup = function(e) {
+  var keyCode = (e.keyCode) ? e.keyCode : e.charCode;
+  if (KEY_CODES[keyCode]) {
+    e.preventDefault();
+    KEY_STATUS[KEY_CODES[keyCode]] = false;
   }
+}
 
-  /**
-   * Creates a Spritesheet
-   * @param {string} - Path to the image.
-   * @param {number} - Width (in px) of each frame.
-   * @param {number} - Height (in px) of each frame.
-   */
-  function SpriteSheet(path, frameWidth, frameHeight) {
-    this.image = new Image();
-    this.frameWidth = frameWidth;
-    this.frameHeight = frameHeight;
+/**
+ * Define an object to hold all our images for the game so images
+ * are only ever created once. This type of object is known as a
+ * singleton.
+ */
+ var imageRepository = new function() {
+ 	// Define images
+ 	this.background = new Image()
+ 	this.runner = new Image()
+ // 	this.bullet = new Image()
 
-    // calculate the number of frames in a row after the image loads
-    var self = this;
-    this.image.onload = function() {
-      self.framesPerRow = Math.floor(self.image.width / self.frameWidth);
-    };
+ 	// Ensure all images have loaded before starting the game
+ 	var numImages = 2;
+ 	var numLoaded = 0;
+ 	function imageLoaded() {
+ 		numLoaded++;
+ 		if (numLoaded === numImages) {
+ 			window.init()
+ 		}
+ 	}
+ 	this.background.onload = function() {
+ 		imageLoaded()
+ 	}
+ 	this.runner.onload = function() {
+ 		imageLoaded()
+ 	}
 
-    this.image.src = path;
-  }
+ 	// Set images src
+  this.background.src = "assets/images/bg.png";
+  this.runner.src= "assets/images/avatar.png"
 
-  /**
-   * Creates an animation from a spritesheet.
-   * @param {SpriteSheet} - The spritesheet used to create the animation.
-   * @param {number}      - Number of frames to wait for before transitioning the animation.
-   * @param {array}       - Range or sequence of frame numbers for the animation.
-   * @param {boolean}     - Repeat the animation once completed.
-   */
-  function Animation(spritesheet, frameSpeed, startFrame, endFrame) {
+// adding obstacles for LATER
+ // 	this.obstacle.src = "imgs/bullet.png";
+ }
 
-    var animationSequence = []; // array holding the order of the animation
-    var currentFrame = 0; // the current frame to draw
-    var counter = 0; // keep track of frame rate
+/**
+ * Creates the Drawable object which will be the base class for
+ * all drawable objects in the game. Sets up default variables
+ * that all child objects will inherit, as well as the defualt
+ * functions.
+ */
 
-    // start and end range for frames
-    for (var frameNumber = startFrame; frameNumber <= endFrame; frameNumber++)
-      animationSequence.push(frameNumber);
+function Drawable() {
+	this.init = function(x, y, width, height) {
+		// Default variables
+		this.x = x;
+		this.y = y;
+		this.width = width;
+		this.height = height;
+	}
+}
+/**
+ * Creates the Background object which will become a child of
+ * the Drawable object. The background is drawn on the "background"
+ * canvas and creates the illusion of moving by panning the image.
+ */
 
-    /**
-     * Update the animation
-     */
-    this.update = function() {
 
-      // update to the next frame if it is time
-      if (counter == (frameSpeed - 1))
-        currentFrame = (currentFrame + 1) % animationSequence.length;
 
-      // update the counter
-      counter = (counter + 1) % frameSpeed;
-    };
 
-    /**
-     * Draw the current frame
-     * @param {integer} x - X position to draw
-     * @param {integer} y - Y position to draw
-     */
-    this.draw = function(x, y) {
-      // get the row and col of the frame
-      var row = Math.floor(animationSequence[currentFrame] / spritesheet.framesPerRow);
-      var col = Math.floor(animationSequence[currentFrame] % spritesheet.framesPerRow);
+function Background() {
+	this.speed = 1; // Redefine speed of the background for panning
 
-      ctx.drawImage(
-        spritesheet.image,
-        col * spritesheet.frameWidth, row * spritesheet.frameHeight,
-        spritesheet.frameWidth, spritesheet.frameHeight,
-        x, y,
-        spritesheet.frameWidth, spritesheet.frameHeight);
-    };
-  }
+	// Implement abstract function
+	this.draw = function() {
+		// Pan background
+		this.x -= this.speed; //reverse this to move left
 
-  /**
-   * Create a parallax background
-   */
-  var background = (function() {
-    var sky = {};
-    var backdrop = {};
-    var backdrop2 = {};
+		this.context.drawImage(imageRepository.background, this.x, this.y);
 
-    /**
-     * Draw the backgrounds to the screen at different speeds
-     */
+		// Draw another image at the right edge of the first image
+		this.context.drawImage(imageRepository.background, this.x - this.canvasWidth, this.y);
+
+		// If the image scrolled off the screen, reset
+		if (this.x <= -(this.canvasWidth))
+			this.x = 0;
+	};
+}
+// Set Background to inherit properties from Drawable
+Background.prototype = new Drawable();
+
+
+/**
+ * Creates the Game object which will hold all objects and data for
+ * the game.
+ */
+
+   function Vector(x, y, dx, dy) {
+     // position
+     this.x = x || 0;
+     this.y = y || 0;
+     // direction
+     this.dx = dx || 0;
+     this.dy = dy || 0;
+   }
+
+ function runner() {
+ // adding properties directly to runner imported object
+ 	  this.speed = 3
+    this.width = 44
+    this.height = 47
+    this.gravity = 1
+    this.dy        = 0;
+    this.jumpDy    = -20;
+		this.jumpHeight = 80;
+    this.isFalling = false;
+    this.isJumping = false;
+    // this.sheet     = new SpriteSheet("---.png", this.width, this.height);
+    // this.walkAnim  = new Animation(player.sheet, 4, 0, 15);
+    // this.anim      = this.walkAnim;
+    // Vector.call(this, 0, 0, 0, this.dy);
     this.draw = function() {
-      ctx.drawImage(assetLoader.imgs.bg, 0, 0);
+ 		this.context.drawImage(imageRepository.runner, this.x, this.y);
+ 		};
+		this.update = function() {
+		// jump if not currently jumping or falling
+		if (KEY_STATUS.space && this.dy === 0 && !this.isJumping) {
+			console.log("up or space pressed")
+		  this.isJumping = true;
+		  this.dy = this.jumpDy;
 
-      // Pan background
-      sky.x -= sky.speed;
-      backdrop.x -= backdrop.speed;
-      backdrop2.x -= backdrop2.speed;
+		}
+		this.y += this.dy;
 
-      // draw images side by side to loop
-      ctx.drawImage(assetLoader.imgs.sky, sky.x, sky.y);
-      ctx.drawImage(assetLoader.imgs.sky, sky.x + canvas.width, sky.y);
+		// add gravity
+		if (this.isFalling || this.isJumping) {
+		  this.dy += this.gravity;
+		}
+		// // change animation if falling
+		// if (this.dy > 0) {
+		//   this.anim = this.fallAnim;
+		// }
+		// // change animation is jumping
+		// else if (this.dy < 0) {
+		//   this.anim = this.jumpAnim;
+		// }
+		// else {
+		//   this.anim = this.walkAnim;
+		// }
 
-      // ctx.drawImage(assetLoader.imgs.backdrop, backdrop.x, backdrop.y);
-      // ctx.drawImage(assetLoader.imgs.backdrop, backdrop.x + canvas.width, backdrop.y);
-      //
-      // ctx.drawImage(assetLoader.imgs.backdrop2, backdrop2.x, backdrop2.y);
-      // ctx.drawImage(assetLoader.imgs.backdrop2, backdrop2.x + canvas.width, backdrop2.y);
+		// this.anim.update();
+		};
+		this.clear = function() {
+      this.context.clearRect(0, 0, this.canvasWidth, this.canvasHeight)
+		}
 
-      // If the image scrolled off the screen, reset
-      if (sky.x + assetLoader.imgs.sky.width <= 0)
-        sky.x = 0;
-      if (backdrop.x + assetLoader.imgs.backdrop.width <= 0)
-        backdrop.x = 0;
-      if (backdrop2.x + assetLoader.imgs.backdrop2.width <= 0)
-        backdrop2.x = 0;
-    };
 
-    /**
-     * Reset background to zero
-     */
-    this.reset = function() {
-      sky.x = 0;
-      sky.y = 0;
-      sky.speed = 0.2;
+ 	};
 
-      backdrop.x = 0;
-      backdrop.y = 0;
-      backdrop.speed = 0.4;
+ runner.prototype = new Drawable();
 
-      backdrop2.x = 0;
-      backdrop2.y = 0;
-      backdrop2.speed = 0.6;
-    }
+ function Game() {
+ 	/*
+ 	 * Gets canvas information and context and sets up all game
+ 	 * objects.
+ 	 * Returns true if the canvas is supported and false if it
+ 	 * is not. This is to stop the animation script from constantly
+ 	 * running on browsers that do not support the canvas.
+ 	 */
+ 	this.init = function() {
+ 		// Get the canvas elements
+ 		this.bgCanvas = document.getElementById('background');
+ 		this.runnerImage = document.getElementById('pangolin');
+ 		this.obsCanvas = document.getElementById('obstacles');
+ 		// Test to see if canvas is supported. Only need to
+ 		// check one canvas
+ 		if (this.bgCanvas.getContext) {
+ 			this.bgContext = this.bgCanvas.getContext('2d');
+ 			this.runnerContext = this.runnerCanvas.getContext('2d');
 
-    return {
-      draw: this.draw,
-      reset: this.reset
-    };
-  })();
+ 			// Prototypal Inheritance
+ 			Background.prototype.context = this.bgContext;
+ 			Background.prototype.canvasWidth = this.bgCanvas.width;
+ 			Background.prototype.canvasHeight = this.bgCanvas.height;
+ 			runner.prototype.context = this.runnerContext;
+ 			runner.prototype.canvasWidth = this.runnerCanvas.width;
+ 			runner.prototype.canvasHeight = this.runnerCanvas.height;
+ 		// 	obstacles.prototype.context = this.obsContext;
+      // obstacles.prototype.canvasWidth = this.obsCanvas.width;
+ 		// 	obstacles.prototype.canvasHeight = this.obsCanvas.height;
 
-  /**
-   * Game loop
-   */
-  function animate() {
-    requestAnimFrame(animate);
+ 			// Initialize the background object
+ 			this.background = new Background();
+ 			this.background.init(0,0); // Set draw point to 0,0
+ 			// Initialize the runner object
+ 			this.runner = new runner();
+ 			this.runner.init(0, 0, imageRepository.runner.width,
+ 			               imageRepository.runner.height);
+ 			return true;
+ 		} else {
+ 			return false;
+ 		}
+ 	};
+ 	// Start the animation loop
+ 	this.start = function() {
+ 		this.runner.draw();
+ 		animate();
+ 	};
+ }
+ /**
+  * The animation loop. Calls the requestAnimationFrame shim to
+  * optimize the game loop and draws all game objects. This
+  * function must be a gobal function and cannot be within an
+  * object.
+  */
+ function animate() {
+ 	requestAnimFrame( animate );
+ 	game.background.draw();
+ 	game.runner.update();
+	game.runner.clear();
+	game.runner.draw();
+ }
 
-    background.draw();
-
-    // for (i = 0; i < ground.length; i++) {
-    //   ground[i].x -= player.speed;
-    //   ctx.drawImage(assetLoader.imgs.grass, ground[i].x, ground[i].y);
-    // }
-    //
-    // if (ground[0].x <= -platformWidth) {
-    //   ground.shift();
-    //   ground.push({'x': ground[ground.length-1].x + platformWidth, 'y': platformHeight});
-    // }
-
-    player.anim.update();
-    player.anim.draw(64, 260);
-  }
-
-  /**
-   * Request Animation Polyfill
-   */
-  var requestAnimFrame = (function() {
-    return window.requestAnimationFrame ||
-      window.webkitRequestAnimationFrame ||
-      window.mozRequestAnimationFrame ||
-      window.oRequestAnimationFrame ||
-      window.msRequestAnimationFrame ||
-      function(callback, element) {
-        window.setTimeout(callback, 1000 / 60);
-      };
-  })();
-
-  /**
-   * Start the game - reset all variables and entities, spawn platforms and water.
-   */
-
-  function startGame() {
-    // setup the player
-    player.width = 44;
-    player.height = 47;
-    player.speed = 6;
-    player.sheet = new SpriteSheet('assets/img/rolling.png', player.width, player.height);
-    player.anim = new Animation(player.sheet, 4, 0, 15);
-
-    // // create the ground tiles
-    // for (i = 0, length = Math.floor(canvas.width / platformWidth) + 2; i < length; i++) {
-    //   ground[i] = {'x': i * platformWidth, 'y': platformHeight};
-    // }
-
-    background.reset();
-
-    animate();
-  }
-
-  assetLoader.downloadAll();
+ window.requestAnimFrame = (function(){
+	return  window.requestAnimationFrame       ||
+			window.webkitRequestAnimationFrame ||
+			window.mozRequestAnimationFrame    ||
+			window.oRequestAnimationFrame      ||
+			window.msRequestAnimationFrame     ||
+			function(/* function */ callback, /* DOMElement */ element){
+				window.setTimeout(callback, 1000 / 60);
+			};
 })();

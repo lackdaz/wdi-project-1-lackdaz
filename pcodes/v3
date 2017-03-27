@@ -59,7 +59,6 @@ document.onkeyup = function(e) {
  		numLoaded++;
  		if (numLoaded === numImages) {
  			window.init()
-			console.log("images loaded!")
  		}
  	}
  	this.background.onload = function() {
@@ -122,7 +121,7 @@ function Background() {
 }
 // Set Background to inherit properties from Drawable
 Background.prototype = new Drawable();
-
+runner.prototype = new Drawable();
 
 /**
  * Creates the Game object which will hold all objects and data for
@@ -140,12 +139,15 @@ Background.prototype = new Drawable();
 
  function runner() {
  // adding properties directly to runner imported object
-		this.speed = 3
+ 		this.x = 0
+		this.y = 0
+ 	  this.speed = 3
     this.width = 44
     this.height = 47
-    this.gravity = 0.5
+    this.gravity = 1
     this.dy        = 0;
-    this.jumpDy    = -9;
+    this.jumpDy    = -20;
+		this.jumpHeight = 80;
     this.isFalling = false;
     this.isJumping = false;
     // this.sheet     = new SpriteSheet("---.png", this.width, this.height);
@@ -153,8 +155,7 @@ Background.prototype = new Drawable();
     // this.anim      = this.walkAnim;
     // Vector.call(this, 0, 0, 0, this.dy);
     this.draw = function() {
- 		this.context.drawImage(imageRepository.runner, this.x, this.y);
-		console.log(this.y)
+ 	// 	this.context.drawImage(imageRepository.runner, this.x, this.y);
  		};
 		this.update = function() {
 		// jump if not currently jumping or falling
@@ -183,14 +184,7 @@ Background.prototype = new Drawable();
 		// }
 
 		// this.anim.update();
-
-		if (this.y >= 93) {
-			this.isJumping = false;
-			this.isFalling = false;
-			this.dy = 0;
-		}
 		};
-
 		this.clear = function() {
       this.context.clearRect(0, 0, this.canvasWidth, this.canvasHeight)
 		}
@@ -198,7 +192,6 @@ Background.prototype = new Drawable();
 
  	};
 
- runner.prototype = new Drawable();
 
  function Game() {
  	/*
@@ -211,22 +204,16 @@ Background.prototype = new Drawable();
  	this.init = function() {
  		// Get the canvas elements
  		this.bgCanvas = document.getElementById('background');
- 		this.runnerCanvas = document.getElementById('pangolin');
- 	// 	this.obsCanvas = document.getElementById('obstacles');
  		// Test to see if canvas is supported. Only need to
  		// check one canvas
-
  		if (this.bgCanvas.getContext) {
  			this.bgContext = this.bgCanvas.getContext('2d');
- 			this.runnerContext = this.runnerCanvas.getContext('2d');
 
  			// Prototypal Inheritance
  			Background.prototype.context = this.bgContext;
  			Background.prototype.canvasWidth = this.bgCanvas.width;
  			Background.prototype.canvasHeight = this.bgCanvas.height;
- 			runner.prototype.context = this.runnerContext;
- 			runner.prototype.canvasWidth = this.runnerCanvas.width;
- 			runner.prototype.canvasHeight = this.runnerCanvas.height;
+
  		// 	obstacles.prototype.context = this.obsContext;
       // obstacles.prototype.canvasWidth = this.obsCanvas.width;
  		// 	obstacles.prototype.canvasHeight = this.obsCanvas.height;
@@ -236,14 +223,13 @@ Background.prototype = new Drawable();
  			this.background.init(0,0); // Set draw point to 0,0
  			// Initialize the runner object
  			this.runner = new runner();
- 			this.runner.init(10, 93, imageRepository.runner.width,
+ 			this.runner.init(0, 0, imageRepository.runner.width,
  			               imageRepository.runner.height);
  			return true;
  		} else {
  			return false;
  		}
  	};
-
  	// Start the animation loop
  	this.start = function() {
  		this.runner.draw();
@@ -252,7 +238,9 @@ Background.prototype = new Drawable();
  }
  /**
   * The animation loop. Calls the requestAnimationFrame shim to
-  * optimize the game loop and draws all game objects. This is a global function
+  * optimize the game loop and draws all game objects. This
+  * function must be a gobal function and cannot be within an
+  * object.
   */
  function animate() {
  	requestAnimFrame( animate );
@@ -262,7 +250,6 @@ Background.prototype = new Drawable();
 	game.runner.draw();
  }
 
-// A neater way of using a setTimeout function 
  window.requestAnimFrame = (function(){
 	return  window.requestAnimationFrame       ||
 			window.webkitRequestAnimationFrame ||

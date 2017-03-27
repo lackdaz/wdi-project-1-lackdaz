@@ -9,6 +9,9 @@ Read Me Contents
 Google Dinosaur Source Code (2698 lines of code)
 https://chromium.googlesource.com/chromium/src.git/+/master/components/neterror/resources/offline.js
 
+For gravityScale
+https://docs.coronalabs.com/api/type/Body/gravityScale.html
+
 Scoring
 1) Distance Score
 2) High Score
