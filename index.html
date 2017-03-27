@@ -1,22 +1,33 @@
 <!DOCTYPE html>
 <html>
-	<head>
-    <head>
-      <meta charset="utf-8">
-      <link rel="stylesheet" href="assets/css/stylesheet.css">
-      <link href="https://fonts.googleapis.com/css?family=Inconsolata" rel="stylesheet">
-      <link href="https://fonts.googleapis.com/css?family=Baloo+Bhaina" rel="stylesheet">
-      <title>SAVE THE PANGOLIN</title>
-    </head>
-	</head>
-	<body onload="init()">
-    <h1>SAVE THE PANGOLIN</h1>
-    <div class="container">
-		<!-- The canvas for the panning background -->
-		<canvas id="background" width="600" height="150">
+
+<head>
+
+  <head>
+    <meta charset="utf-8">
+    <link rel="stylesheet" href="assets/css/stylesheet.css">
+    <link href="https://fonts.googleapis.com/css?family=Inconsolata" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Baloo+Bhaina" rel="stylesheet">
+    <title>SAVE THE PANGOLIN</title>
+  </head>
+</head>
+
+<body>
+  <h1>SAVE THE PANGOLIN</h1>
+  <div class="container">
+    <!-- The canvas for the panning background -->
+    <canvas id="background" width="600" height="150">
 			Your browser does not support canvas. Please try again with a different browser.
 		</canvas>
-    </div>
-    <script src="assets/js/script.js" charset="utf-8"></script>
-  </body>
+    <!-- Canvas for the runner -->
+    <canvas id="pangolin" width="59" height="47">
+    </canvas>
+    <!-- Canvas for the obstacles -->
+    <canvas id="obstacles" width="600" height="150">
+    </canvas>
+
+  </div>
+  <script src="assets/js/script.js" charset="utf-8"></script>
+</body>
+
 </html>

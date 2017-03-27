@@ -1,0 +1,216 @@
+/***************
+ * PART ONE - Setting up the structure of the game and panning
+ * a background
+ ***************/
+/**
+ * Initialize the Game and starts it.
+ */
+var game = new Game();
+
+function init() {
+	if(game.init())
+		game.start();
+}
+
+/**
+ * Define an object to hold all our images for the game so images
+ * are only ever created once. This type of object is known as a
+ * singleton.
+ */
+ var imageRepository = new function() {
+ 	// Define images
+ 	this.background = new Image()
+ 	this.runner = new Image()
+ // 	this.bullet = new Image()
+
+ 	// Ensure all images have loaded before starting the game
+ 	var numImages = 2;
+ 	var numLoaded = 0;
+ 	function imageLoaded() {
+ 		numLoaded++;
+ 		if (numLoaded === numImages) {
+ 			window.init()
+ 		}
+ 	}
+ 	this.background.onload = function() {
+ 		imageLoaded()
+ 	}
+ 	this.runner.onload = function() {
+ 		imageLoaded()
+ 	}
+
+ 	// Set images src
+  this.background.src = "assets/images/bg.png";
+  this.runner.src= "assets/images/pangolin_rolling1_nobg.png"
+
+// adding obstacles for LATER
+ // 	this.obstacle.src = "imgs/bullet.png";
+ }
+
+/**
+ * Creates the Drawable object which will be the base class for
+ * all drawable objects in the game. Sets up defualt variables
+ * that all child objects will inherit, as well as the defualt
+ * functions.
+ */
+
+function Drawable() {
+	this.init = function(x, y, width, height) {
+		// Defualt variables
+		this.x = x;
+		this.y = y;
+		this.width = width;
+		this.height = height;
+	}
+}
+/**
+ * Creates the Background object which will become a child of
+ * the Drawable object. The background is drawn on the "background"
+ * canvas and creates the illusion of moving by panning the image.
+ */
+
+ function Obstacle() {
+ // 	this.speed = 3;  // perhaps needed later
+ 	this.Obstacle = new Pool(30);
+ 	this.Obstacle.init();
+ 	var fireRate = 15;
+ 	var counter = 0;
+ 	this.draw = function() {
+ 		this.context.drawImage(imageRepository.runner, this.x, this.y);
+ 	};
+ 	this.move = function() {
+ 		counter++;
+ 		// Determine if the action is move action
+ 		if (KEY_STATUS.left || KEY_STATUS.right ||
+ 			KEY_STATUS.down || KEY_STATUS.up) {
+ 			// The ship moved, so erase it's current image so it can
+ 			// be redrawn in it's new location
+ 			this.context.clearRect(this.x, this.y, this.width, this.height);
+ 			// Update x and y according to the direction to move and
+ 			// redraw the ship. Change the else if's to if statements
+ 			// to have diagonal movement.
+ 			if (KEY_STATUS.left) {
+ 				this.x -= this.speed
+ 				if (this.x <= 0) // Keep player within the screen
+ 					this.x = 0;
+ 			} else if (KEY_STATUS.right) {
+ 				this.x += this.speed
+ 				if (this.x >= this.canvasWidth - this.width)
+ 					this.x = this.canvasWidth - this.width;
+ 			} else if (KEY_STATUS.up) {
+ 				this.y -= this.speed
+ 				if (this.y <= this.canvasHeight/4*3)
+ 					this.y = this.canvasHeight/4*3;
+ 			} else if (KEY_STATUS.down) {
+ 				this.y += this.speed
+ 				if (this.y >= this.canvasHeight - this.height)
+ 					this.y = this.canvasHeight - this.height;
+ 			}
+ 			// Finish by redrawing the ship
+ 			this.draw();
+ 		}
+ 		if (KEY_STATUS.space && counter >= fireRate) {
+ 			this.fire();
+ 			counter = 0;
+ 		}
+ 	};
+ 	/*
+ 	 * Fires two bullets
+ 	 */
+ 	this.jump = function() {
+// Jump code goes here
+ 	};
+ }
+ Runner.prototype = new Drawable();
+
+function Background() {
+	this.speed = 1; // Redefine speed of the background for panning
+
+	// Implement abstract function
+	this.draw = function() {
+		// Pan background
+		this.x -= this.speed; //reverse this to move left
+
+		this.context.drawImage(imageRepository.background, this.x, this.y);
+
+		// Draw another image at the right edge of the first image
+		this.context.drawImage(imageRepository.background, this.x - this.canvasWidth, this.y);
+
+		// If the image scrolled off the screen, reset
+		if (this.x <= -(this.canvasWidth))
+			this.x = 0;
+	};
+}
+// Set Background to inherit properties from Drawable
+Background.prototype = new Drawable();
+
+
+/**
+ * Creates the Game object which will hold all objects and data for
+ * the game.
+ */
+function Game() {
+	/*
+	 * Gets canvas information and context and sets up all game
+	 * objects.
+	 * Returns true if the canvas is supported and false if it
+	 * is not. This is to stop the animation script from constantly
+	 * running on older browsers.
+	 */
+	this.init = function() {
+		// Get the canvas element
+		this.bgCanvas = document.getElementById('background');
+
+		// Test to see if canvas is supported
+		if (this.bgCanvas.getContext) {
+			this.bgContext = this.bgCanvas.getContext('2d');
+
+			// Initialize objects to contain their context and canvas
+			// information
+			Background.prototype.context = this.bgContext;
+			Background.prototype.canvasWidth = this.bgCanvas.width;
+			Background.prototype.canvasHeight = this.bgCanvas.height;
+
+			// Initialize the background object
+			this.background = new Background();
+			this.background.init(0,0); // Set draw point to 0,0
+			return true;
+		} else {
+			return false;
+		}
+	};
+
+	// Start the animation loop
+	this.start = function() {
+		animate();
+	};
+}
+
+
+/**
+ * The animation loop. Calls the requestAnimationFrame shim to
+ * optimize the game loop and draws all game objects. This
+ * function must be a gobal function and cannot be within an
+ * object.
+ */
+function animate() {
+	requestAnimFrame( animate );
+	game.background.draw();
+}
+
+
+/**
+ * requestAnim shim layer by Paul Irish
+ * Finds the first API that works to optimize the animation loop,
+ * otherwise defaults to setTimeout().
+ */
+window.requestAnimFrame = (function(){
+	return  window.requestAnimationFrame       ||
+			window.webkitRequestAnimationFrame ||
+			window.mozRequestAnimationFrame    ||
+			window.oRequestAnimationFrame      ||
+			window.msRequestAnimationFrame     ||
+			function(/* function */ callback, /* DOMElement */ element){
+				window.setTimeout(callback, 1000 / 60);
+			};
+})()
