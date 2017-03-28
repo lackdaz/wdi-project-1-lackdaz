@@ -7,38 +7,16 @@
 var game = new Game();
 
 function init() {
-	if(game.init())
+	if(game.init()) // game constructor init method
 		game.start();
 }
 
-KEY_CODES = {
-  32: 'space',
-  38: 'up',
-  40: 'down',
-}
 
-// Create an object to check true/false. Initialize all values to false
-KEY_STATUS = {};
-for (code in KEY_CODES) {
-  KEY_STATUS[ KEY_CODES[ code ]] = false;
-}
 
-document.onkeydown = function(e) {
-  // Firefox and opera use charCode instead of keyCode to
-  // return which key was pressed.
-  var keyCode = (e.keyCode) ? e.keyCode : e.charCode;
-  if (KEY_CODES[keyCode]) {
-    e.preventDefault();
-    KEY_STATUS[KEY_CODES[keyCode]] = true;
-  }
-}
-
-document.onkeyup = function(e) {
-  var keyCode = (e.keyCode) ? e.keyCode : e.charCode;
-  if (KEY_CODES[keyCode]) {
-    e.preventDefault();
-    KEY_STATUS[KEY_CODES[keyCode]] = false;
-  }
+var para = {
+	gameState: 0,
+	pool: [],
+	speedMultiplier: 0.0001,
 }
 
 /**
@@ -50,10 +28,11 @@ document.onkeyup = function(e) {
  	// Define images
  	this.background = new Image()
  	this.runner = new Image()
+	this.bush = new Image()
  // 	this.bullet = new Image()
 
  	// Ensure all images have loaded before starting the game
- 	var numImages = 2;
+ 	var numImages = 3;
  	var numLoaded = 0;
  	function imageLoaded() {
  		numLoaded++;
@@ -68,11 +47,14 @@ document.onkeyup = function(e) {
  	this.runner.onload = function() {
  		imageLoaded()
  	}
+	this.bush.onload = function() {
+ 		imageLoaded()
+ 	}
 
  	// Set images src
   this.background.src = "assets/images/bg.png";
   this.runner.src= "assets/images/avatar.png"
-
+	this.bush.src= "assets/images/bush1.png"
 // adding obstacles for LATER
  // 	this.obstacle.src = "imgs/bullet.png";
  }
@@ -102,14 +84,14 @@ function Drawable() {
 
 
 
-function Background() {
-	this.speed = 1; // Redefine speed of the background for panning
+function Background(speed) {
+	this.speed = speed; // Redefine speed of the background for panning
 
 	// Implement abstract function
 	this.draw = function() {
 		// Pan background
 		this.x -= this.speed; //reverse this to move left
-
+		this.speed += para.speedMultiplier
 		this.context.drawImage(imageRepository.background, this.x, this.y);
 
 		// Draw another image at the right edge of the first image
@@ -119,28 +101,49 @@ function Background() {
 		if (this.x <= -(this.canvasWidth))
 			this.x = 0;
 	};
+
+	this.spawn = function() {
+		// spawn an obstacle
+		if (para.pool.length === 0 && Math.random() > 0.8) {
+			this.y = getRandomArbitrary(0,93)
+			para.pool.push(this.y)
+		}
+		this.speed += para.speedMultiplier
+		this.x -= this.speed; //reverse this to move left
+		this.context.drawImage(imageRepository.bush, this.x, this.y);
+		this.context.fillStyle = '#80FFFFFF'
+		this.context.fillRect(this.x,this.y,this.x+this.width,this.y+this.height);
+		// console.log(pool,this.x)
+		// If the image scrolled off the screen, reset
+		if (this.x <= -(this.canvasWidth)) {
+			this.x = 800
+			para.pool.pop()
+		}
+
+		// }
+	};
+
 }
 // Set Background to inherit properties from Drawable
 Background.prototype = new Drawable();
-
+runner.prototype = new Drawable();
 
 /**
  * Creates the Game object which will hold all objects and data for
  * the game.
  */
 
-   function Vector(x, y, dx, dy) {
-     // position
-     this.x = x || 0;
-     this.y = y || 0;
-     // direction
-     this.dx = dx || 0;
-     this.dy = dy || 0;
-   }
+  //  function Vector(x, y, dx, dy) {
+  //    // position
+  //    this.x = x || 0;
+  //    this.y = y || 0;
+  //    // direction
+  //    this.dx = dx || 0;
+  //    this.dy = dy || 0;
+  //  }
 
  function runner() {
  // adding properties directly to runner imported object
-		this.speed = 3
     this.width = 44
     this.height = 47
     this.gravity = 0.5
@@ -154,12 +157,11 @@ Background.prototype = new Drawable();
     // Vector.call(this, 0, 0, 0, this.dy);
     this.draw = function() {
  		this.context.drawImage(imageRepository.runner, this.x, this.y);
-		console.log(this.y)
+		// console.log(this.y)
  		};
 		this.update = function() {
 		// jump if not currently jumping or falling
 		if (KEY_STATUS.space && this.dy === 0 && !this.isJumping) {
-			console.log("up or space pressed")
 		  this.isJumping = true;
 		  this.dy = this.jumpDy;
 
@@ -195,10 +197,47 @@ Background.prototype = new Drawable();
       this.context.clearRect(0, 0, this.canvasWidth, this.canvasHeight)
 		}
 
-
  	};
 
- runner.prototype = new Drawable();
+
+// function checkCollision() {
+// 	if (object1.x < object2.x + object2.width  && object1.x + object1.width  > object2.x &&
+// 		 object1.y < object2.y + object2.height && object1.y + object1.height > object2.y) {
+//  return true
+//  }
+//  else return false
+//
+// }
+
+testCollisionRectRect = function(rect1,rect2){
+	// console.log(rect2.x, rect1.x+rect1.width)
+	// console.log(rect1.y, rect2.y + rect2.height)
+	// console.log(rect2.y, rect1.y + rect1.height)
+	// console.log(rect1.x, rect2.x+rect2.width)
+
+  return rect1.x <= rect2.x+rect2.width
+  && rect2.x <= rect1.x+rect1.width
+  && rect1.y <= rect2.y + rect2.height
+  && rect2.y <= rect1.y + rect1.height;
+}
+
+function testCollision (object1,object2){
+        var rect1 = {
+                x:object1.x-object1.width, // finds the center x point
+                y:object1.y-object1.height, // finds the center y point
+                width:object1.width,
+                height:object1.height,
+        }
+        var rect2 = {
+                x:object2.x-object2.width,
+                y:object2.y-object2.height,
+                width:object2.width/4,
+                height:object2.height/4,
+        }
+				x:object1.x-object1.width
+        return testCollisionRectRect(rect1,rect2);
+}
+
 
  function Game() {
  	/*
@@ -212,10 +251,9 @@ Background.prototype = new Drawable();
  		// Get the canvas elements
  		this.bgCanvas = document.getElementById('background');
  		this.runnerCanvas = document.getElementById('pangolin');
- 	// 	this.obsCanvas = document.getElementById('obstacles');
- 		// Test to see if canvas is supported. Only need to
- 		// check one canvas
 
+		// Test to see if canvas is supported by browser. Only need to
+ 		// check one canvas
  		if (this.bgCanvas.getContext) {
  			this.bgContext = this.bgCanvas.getContext('2d');
  			this.runnerContext = this.runnerCanvas.getContext('2d');
@@ -227,21 +265,29 @@ Background.prototype = new Drawable();
  			runner.prototype.context = this.runnerContext;
  			runner.prototype.canvasWidth = this.runnerCanvas.width;
  			runner.prototype.canvasHeight = this.runnerCanvas.height;
- 		// 	obstacles.prototype.context = this.obsContext;
-      // obstacles.prototype.canvasWidth = this.obsCanvas.width;
- 		// 	obstacles.prototype.canvasHeight = this.obsCanvas.height;
+
 
  			// Initialize the background object
- 			this.background = new Background();
+ 			this.background = new Background(1);
  			this.background.init(0,0); // Set draw point to 0,0
- 			// Initialize the runner object
+
+
+			// Initialize the runner object
  			this.runner = new runner();
  			this.runner.init(10, 93, imageRepository.runner.width,
  			               imageRepository.runner.height);
+
+			// Initializiling obstacles in background
+			this.obstacle = new Background(4);
+			this.obstacle.init(0,0,imageRepository.bush.width,imageRepository.bush.height)
+
+
  			return true;
  		} else {
  			return false;
  		}
+
+
  	};
 
  	// Start the animation loop
@@ -249,20 +295,34 @@ Background.prototype = new Drawable();
  		this.runner.draw();
  		animate();
  	};
+
+	// this.gameOver = function() {
+	//
+	// }
  }
  /**
   * The animation loop. Calls the requestAnimationFrame shim to
   * optimize the game loop and draws all game objects. This is a global function
   */
  function animate() {
- 	requestAnimFrame( animate );
+ 	requestAnimFrame( animate ); // This allows me to use frames!
  	game.background.draw();
+	game.obstacle.spawn();
  	game.runner.update();
 	game.runner.clear();
 	game.runner.draw();
+	// console.log(game.runner.x,game.runner.y)
+	// if (testCollision(game.runner,game.obstacle)){
+	//
+	// };
  }
 
-// A neater way of using a setTimeout function 
+//A global function I use to call for random numbers
+ function getRandomArbitrary(min, max) {
+  return Math.floor(Math.random() * (max - min)) + min;
+}
+
+// A neater way of setting a setTimeout function by frame rates + compatibility with browsers.
  window.requestAnimFrame = (function(){
 	return  window.requestAnimationFrame       ||
 			window.webkitRequestAnimationFrame ||
@@ -273,3 +333,33 @@ Background.prototype = new Drawable();
 				window.setTimeout(callback, 1000 / 60);
 			};
 })();
+
+// Keystroke Checker
+// **************************************************
+KEY_CODES = {
+  32: 'space',
+  38: 'up',
+  40: 'down',
+}
+// Create an object to check true/false. Initialize all values to false
+KEY_STATUS = {};
+for (code in KEY_CODES) {
+  KEY_STATUS[ KEY_CODES[ code ]] = false;
+}
+document.onkeydown = function(e) {
+  // Firefox and opera use charCode instead of keyCode to
+  // return which key was pressed.
+  var keyCode = (e.keyCode) ? e.keyCode : e.charCode;
+  if (KEY_CODES[keyCode]) {
+    e.preventDefault();
+    KEY_STATUS[KEY_CODES[keyCode]] = true;
+  }
+}
+// need to update to false else avatar will be permanently jumping
+document.onkeyup = function(e) {
+  var keyCode = (e.keyCode) ? e.keyCode : e.charCode;
+  if (KEY_CODES[keyCode]) {
+    e.preventDefault();
+    KEY_STATUS[KEY_CODES[keyCode]] = false;
+  }
+}
