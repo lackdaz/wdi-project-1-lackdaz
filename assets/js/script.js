@@ -20,7 +20,8 @@ var para = {
 	gameState: 0,
 	pool: [],
 	speedMultiplier: 0.01,
-	score: 0
+	score: 0,
+	hscore: 0
 }
 
 /**
@@ -121,6 +122,17 @@ function Background(speed) {
 		this.x -= this.speed; //reverse this to move left
 		this.context.drawImage(imageRepository.bush, this.x, this.y);
 		console.log(this.y)
+
+		this.context.font = "20px Inconsolata";
+		this.context.textAlign = "topright";
+	  if (para.score <= 999999) {
+			var scoreWithZeros = ("00000"+Math.floor(para.score)).slice(-6)
+		}
+		if (para.hscore) {
+			var hscoreWithZeros = ("00000"+Math.floor(para.hscore)).slice(-6)
+			this.context.fillText("HI "+hscoreWithZeros, 400, 20 );
+		}
+		this.context.fillText(scoreWithZeros, 515, 20 );
 		// Debugger
 		// *
 		this.context.fillStyle = '#80FFFFFF'
@@ -128,7 +140,7 @@ function Background(speed) {
 		// console.log(pool,this.x)
 		// If the image scrolled off the screen, reset
 		if (this.x <= -(this.width)-50) {
-			this.x = 800
+			this.x = getRandomArbitrary(900, 1500)
 			para.pool.pop()
 			console.log('obstacle pool:'+para.pool.length)
 		}
@@ -311,15 +323,17 @@ function testCollision (object1,object2){
 	}
 
 	this.reset = function() {
-		para = {
-			gameState: 0,
-			pool: [],
-			speedMultiplier: 0.01,
-			score: 0
-		}
+		para.gameState = 0
+		para.pool = []
+		para.speedMultiplier = 0.01
+		para.hscore = Math.max(para.hscore,Math.floor(para.score))
+		para.score = 0
+		game.background.speed = 1
+		game.obstacle.x = 1000
+		game.obstacle.speed = 4
 	}
 
-	$('.git add .').click(function() {
+	$('.restart').click(function() {
 		$('#game-over').hide();
 		game.reset()
 		game.start()
@@ -340,7 +354,8 @@ function testCollision (object1,object2){
 			game.runner.update();
 			game.runner.clear();
 			game.runner.draw();
-			para.score+=0.2
+			para.score+=0.5
+
 	 }
 	// console.log(game.runner.x,game.runner.y)
 	// console.log(testCollision(game.runner,game.obstacle))
