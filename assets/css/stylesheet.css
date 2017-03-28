@@ -1,3 +1,14 @@
+/*body {
+  flex-: column;
+  align-content: center;
+  justify-content: center;
+
+}
+
+h1, div, p {
+  align-self: center;
+}*/
+
 body {
   margin: 0 auto;
   text-align: center;
@@ -6,19 +17,15 @@ body {
 }
 
 .container {
+  margin: 0 auto;
+  justify-content: center;
   width: 600px;
   height: 150px;
-  position: absolute;
-  margin: 80 auto;
-
-  /*top: 80px;
-  left: 5px;*/
+  position: relative;
 }
 
 #background {
   position: absolute;
-  /*top: 0;
-  left: 0;*/
   border: 1px solid black;
   z-index: 0;
   max-width: 600px;
@@ -33,22 +40,30 @@ body {
   border: 1px solid black;
   top: 0px;
   left: 0px;
-  z-index: 2;
-  /*width: 59px;
-  height: 47px;*/
+  z-index: 2
 }
 
-/*#obstacles {
-  position: absolute;
-  top: 0px;
-  left: 0px;
-  border: 1px solid black;
-  z-index: 1;
+#game-over {
+  display: none;
+  text-align: center;
+  padding-top: 40px;
+  z-index: 2;
   width: 600px;
-  height: 150px;
-}*/
+  height: 360px;
+  position: absolute;
+}
 
-
+#main-message {
+  font-family:
+  display: block;
+  text-align: left;
+  box-sizing: border-box;
+  font-size: 1em;
+  line-height: 1.6em;
+  margin: 50px auto 0;
+  max-width: 600px;
+  width: 100%;
+}
 /*canvas {
   position: absolute;
   top: 0px;

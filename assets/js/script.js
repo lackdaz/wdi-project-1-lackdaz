@@ -4,10 +4,13 @@
 /**
  * Initialize the Game and starts it.
  */
+
 var game = new Game();
 
 function init() {
 	if(game.init()) // game constructor init method
+
+	$("#main-message").hide();
 		game.start();
 }
 
@@ -17,6 +20,7 @@ var para = {
 	gameState: 0,
 	pool: [],
 	speedMultiplier: 0.01,
+	score: 0
 }
 
 /**
@@ -107,10 +111,13 @@ function Background(speed) {
 		if (para.pool.length === 0) {
 			this.y = getRandomArbitrary(0,93)
 			para.pool.push(this.y)
-			console.log('spawned: '+this.y)
-			console.log('obstacle pool: '+para.pool.length)
+			// console.log('spawned: '+this.y)
+			// console.log('obstacle pool: '+para.pool.length)
 		}
 		this.speed += para.speedMultiplier
+		this.canvasWidth += 1
+		$('background').css( "width", this.canvasWidth )
+		console.log(this.canvasWidth)
 		this.x -= this.speed; //reverse this to move left
 		this.context.drawImage(imageRepository.bush, this.x, this.y);
 		console.log(this.y)
@@ -138,20 +145,10 @@ runner.prototype = new Drawable();
  * Creates the Game object which will hold all objects and data for
  * the game.
  */
-
-  //  function Vector(x, y, dx, dy) {
-  //    // position
-  //    this.x = x || 0;
-  //    this.y = y || 0;
-  //    // direction
-  //    this.dx = dx || 0;
-  //    this.dy = dy || 0;
-  //  }
-
  function runner() {
  // adding properties directly to runner imported object
-    this.width = 44
-    this.height = 47
+    // this.width = 44
+    // this.height = 47
     this.gravity = 0.5
     this.dy        = 0;
     this.jumpDy    = -9;
@@ -163,7 +160,7 @@ runner.prototype = new Drawable();
     // this.anim      = this.walkAnim;
     // Vector.call(this, 0, 0, 0, this.dy);
     this.draw = function() {
-		this.context.fillRect(this.x,this.y,this.width,this.height);
+		// this.context.fillRect(this.x,this.y,this.width,this.height);
  		this.context.drawImage(imageRepository.runner, this.x, this.y);
 		// console.log(this.y)
  		};
@@ -221,16 +218,6 @@ runner.prototype = new Drawable();
 		}
 
  	};
-
-
-// function checkCollision() {
-// 	if (object1.x < object2.x + object2.width  && object1.x + object1.width  > object2.x &&
-// 		 object1.y < object2.y + object2.height && object1.y + object1.height > object2.y) {
-//  return true
-//  }
-//  else return false
-//
-// }
 
 testCollisionRectRect = function(rect1,rect2){
 // Collision logic
@@ -315,18 +302,36 @@ function testCollision (object1,object2){
  	};
 
 	this.over = function() {
-		if (para.gameState) return true
+		if (para.gameState) {
+			$('#score').html(Math.floor(para.score));
+			$('#game-over').show();
+			return true
+		}
 		else return false
 	}
 
 	this.reset = function() {
-
+		para = {
+			gameState: 0,
+			pool: [],
+			speedMultiplier: 0.01,
+			score: 0
+		}
 	}
+
+	$('.git add .').click(function() {
+		$('#game-over').hide();
+		game.reset()
+		game.start()
+		game.runner.clear();
+	});
  }
  /**
   * The animation loop. Calls the requestAnimationFrame shim to
   * optimize the game loop and draws all game objects. This is a global function
   */
+
+
  function animate() {
 	 if (!game.over()) {
 			requestAnimFrame( animate ); // This allows me to use frames!
@@ -335,6 +340,7 @@ function testCollision (object1,object2){
 			game.runner.update();
 			game.runner.clear();
 			game.runner.draw();
+			para.score+=0.2
 	 }
 	// console.log(game.runner.x,game.runner.y)
 	// console.log(testCollision(game.runner,game.obstacle))
