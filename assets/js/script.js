@@ -16,7 +16,7 @@ function init() {
 var para = {
 	gameState: 0,
 	pool: [],
-	speedMultiplier: 0.0001,
+	speedMultiplier: 0.01,
 }
 
 /**
@@ -104,20 +104,26 @@ function Background(speed) {
 
 	this.spawn = function() {
 		// spawn an obstacle
-		if (para.pool.length === 0 && Math.random() > 0.95) {
+		if (para.pool.length === 0) {
 			this.y = getRandomArbitrary(0,93)
 			para.pool.push(this.y)
+			console.log('spawned: '+this.y)
+			console.log('obstacle pool: '+para.pool.length)
 		}
 		this.speed += para.speedMultiplier
 		this.x -= this.speed; //reverse this to move left
 		this.context.drawImage(imageRepository.bush, this.x, this.y);
+		console.log(this.y)
+		// Debugger
+		// *
 		this.context.fillStyle = '#80FFFFFF'
-		this.context.fillRect(this.x,this.y,this.width,this.height);
+		this.context.fillRect(this.x + this.width ,this.y + this.height,this.width,this.height);
 		// console.log(pool,this.x)
 		// If the image scrolled off the screen, reset
-		if (this.x <= -(this.width)) {
+		if (this.x <= -(this.width)-50) {
 			this.x = 800
 			para.pool.pop()
+			console.log('obstacle pool:'+para.pool.length)
 		}
 
 		// }
@@ -151,6 +157,7 @@ runner.prototype = new Drawable();
     this.jumpDy    = -9;
     this.isFalling = false;
     this.isJumping = false;
+		this.isDucking = false;
     // this.sheet     = new SpriteSheet("---.png", this.width, this.height);
     // this.walkAnim  = new Animation(player.sheet, 4, 0, 15);
     // this.anim      = this.walkAnim;
@@ -167,6 +174,21 @@ runner.prototype = new Drawable();
 		  this.dy = this.jumpDy;
 
 		}
+
+		if (KEY_STATUS.down) {
+			this.isDucking = true;
+		  this.width = 59
+			this.height = 22
+			this.y = 93 + 25
+		}
+		if (!KEY_STATUS.down && !this.isJumping) {
+			this.isDucking = false;
+			this.width = 44
+			this.height = 47
+			this.y = 93
+		}
+
+
 		this.y += this.dy;
 
 		// add gravity
@@ -211,28 +233,23 @@ runner.prototype = new Drawable();
 // }
 
 testCollisionRectRect = function(rect1,rect2){
-	console.log(rect2.x <= rect1.x+rect1.width, rect1.x <= rect2.x+rect2.width, rect1.y<= rect2.y + rect2.height, rect2.y <= rect1.y + rect1.height)
-	console.log(rect2.x, rect1.x+rect1.width)
-	// console.log(rect1.y, rect2.y + rect2.height)
-	// console.log(rect2.y, rect1.y + rect1.height)
-	// console.log(rect1.x, rect2.x+rect2.width)
-
-  return rect1.x <= rect2.x + rect2.width // if runner position is smaller than obstacle
-  && rect2.x <= rect1.x + rect1.width // if obstacle is smaller than
-  && rect1.y <= rect2.y + rect2.height //
+// Collision logic
+  return rect1.x <= rect2.x + rect2.width
+  && rect2.x <= rect1.x + rect1.width
+  && rect1.y <= rect2.y + rect2.height
   && rect2.y <= rect1.y + rect1.height;
 }
 
 function testCollision (object1,object2){
-        var rect1 = {
+        var rect1 = { // runner
                 x:object1.x-10, // finds top left x point
                 y:object1.y, // finds top left y point
                 width:object1.width,
                 height:object1.height,
         }
-        var rect2 = {
-                x:object2.x,
-                y:object2.y,
+        var rect2 = { //obstacle
+                x:object2.x + object2.width,
+                y:object2.y + object2.height,
                 width:object2.width,
                 height:object2.height,
         }
@@ -275,7 +292,7 @@ function testCollision (object1,object2){
 
 			// Initialize the runner object
  			this.runner = new runner();
- 			this.runner.init(10, 93, imageRepository.runner.width,
+ 			this.runner.init(10, 100, imageRepository.runner.width,
  			               imageRepository.runner.height);
 
 			// Initializiling obstacles in background
@@ -320,8 +337,9 @@ function testCollision (object1,object2){
 			game.runner.draw();
 	 }
 	// console.log(game.runner.x,game.runner.y)
-	console.log(testCollision(game.runner,game.obstacle))
+	// console.log(testCollision(game.runner,game.obstacle))
 	if (testCollision(game.runner,game.obstacle)){
+		console.log(game.obstacle.y)
 		para.gameState = 1
 	}
 	else para.gameState = 0
