@@ -104,7 +104,7 @@ function Background(speed) {
 
 	this.spawn = function() {
 		// spawn an obstacle
-		if (para.pool.length === 0 && Math.random() > 0.8) {
+		if (para.pool.length === 0 && Math.random() > 0.95) {
 			this.y = getRandomArbitrary(0,93)
 			para.pool.push(this.y)
 		}
@@ -112,10 +112,10 @@ function Background(speed) {
 		this.x -= this.speed; //reverse this to move left
 		this.context.drawImage(imageRepository.bush, this.x, this.y);
 		this.context.fillStyle = '#80FFFFFF'
-		this.context.fillRect(this.x,this.y,this.x+this.width,this.y+this.height);
+		this.context.fillRect(this.x,this.y,this.width,this.height);
 		// console.log(pool,this.x)
 		// If the image scrolled off the screen, reset
-		if (this.x <= -(this.canvasWidth)) {
+		if (this.x <= -(this.width)) {
 			this.x = 800
 			para.pool.pop()
 		}
@@ -156,6 +156,7 @@ runner.prototype = new Drawable();
     // this.anim      = this.walkAnim;
     // Vector.call(this, 0, 0, 0, this.dy);
     this.draw = function() {
+		this.context.fillRect(this.x,this.y,this.width,this.height);
  		this.context.drawImage(imageRepository.runner, this.x, this.y);
 		// console.log(this.y)
  		};
@@ -210,31 +211,31 @@ runner.prototype = new Drawable();
 // }
 
 testCollisionRectRect = function(rect1,rect2){
-	// console.log(rect2.x, rect1.x+rect1.width)
+	console.log(rect2.x <= rect1.x+rect1.width, rect1.x <= rect2.x+rect2.width, rect1.y<= rect2.y + rect2.height, rect2.y <= rect1.y + rect1.height)
+	console.log(rect2.x, rect1.x+rect1.width)
 	// console.log(rect1.y, rect2.y + rect2.height)
 	// console.log(rect2.y, rect1.y + rect1.height)
 	// console.log(rect1.x, rect2.x+rect2.width)
 
-  return rect1.x <= rect2.x+rect2.width
-  && rect2.x <= rect1.x+rect1.width
-  && rect1.y <= rect2.y + rect2.height
+  return rect1.x <= rect2.x + rect2.width // if runner position is smaller than obstacle
+  && rect2.x <= rect1.x + rect1.width // if obstacle is smaller than
+  && rect1.y <= rect2.y + rect2.height //
   && rect2.y <= rect1.y + rect1.height;
 }
 
 function testCollision (object1,object2){
         var rect1 = {
-                x:object1.x-object1.width, // finds the center x point
-                y:object1.y-object1.height, // finds the center y point
+                x:object1.x-10, // finds top left x point
+                y:object1.y, // finds top left y point
                 width:object1.width,
                 height:object1.height,
         }
         var rect2 = {
-                x:object2.x-object2.width,
-                y:object2.y-object2.height,
-                width:object2.width/4,
-                height:object2.height/4,
+                x:object2.x,
+                y:object2.y,
+                width:object2.width,
+                height:object2.height,
         }
-				x:object1.x-object1.width
         return testCollisionRectRect(rect1,rect2);
 }
 
@@ -279,7 +280,7 @@ function testCollision (object1,object2){
 
 			// Initializiling obstacles in background
 			this.obstacle = new Background(4);
-			this.obstacle.init(0,0,imageRepository.bush.width,imageRepository.bush.height)
+			this.obstacle.init(-200,0,imageRepository.bush.width/3,imageRepository.bush.height/3)
 
 
  			return true;
@@ -296,25 +297,34 @@ function testCollision (object1,object2){
  		animate();
  	};
 
-	// this.gameOver = function() {
-	//
-	// }
+	this.over = function() {
+		if (para.gameState) return true
+		else return false
+	}
+
+	this.reset = function() {
+
+	}
  }
  /**
   * The animation loop. Calls the requestAnimationFrame shim to
   * optimize the game loop and draws all game objects. This is a global function
   */
  function animate() {
- 	requestAnimFrame( animate ); // This allows me to use frames!
- 	game.background.draw();
-	game.obstacle.spawn();
- 	game.runner.update();
-	game.runner.clear();
-	game.runner.draw();
+	 if (!game.over()) {
+			requestAnimFrame( animate ); // This allows me to use frames!
+			game.background.draw();
+			game.obstacle.spawn();
+			game.runner.update();
+			game.runner.clear();
+			game.runner.draw();
+	 }
 	// console.log(game.runner.x,game.runner.y)
-	// if (testCollision(game.runner,game.obstacle)){
-	//
-	// };
+	console.log(testCollision(game.runner,game.obstacle))
+	if (testCollision(game.runner,game.obstacle)){
+		para.gameState = 1
+	}
+	else para.gameState = 0
  }
 
 //A global function I use to call for random numbers
