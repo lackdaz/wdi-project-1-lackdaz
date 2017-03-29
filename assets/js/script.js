@@ -171,10 +171,10 @@ function Game() {
       this.speed += para.speedMultiplier
       this.canvasWidth += 1
       $('background').css("width", this.canvasWidth)
-      console.log(this.canvasWidth)
+      // console.log(this.canvasWidth)
       this.x -= this.speed; //reverse this to move left
       this.context.drawImage(imageRepository.bush, this.x, this.y);
-      console.log(this.y)
+      // console.log(this.y)
 
       this.context.font = "20px Inconsolata";
       this.context.textAlign = "topright";
@@ -295,7 +295,7 @@ function Game() {
   // Start the animation loop
   this.start = function() {
     this.runner.draw();
-    animate();
+    animate.call(this);
   };
 
   this.over = function() {
@@ -333,7 +333,9 @@ function Game() {
  **********************************************/
 
 function animate() {
-  if (!game.over()) {
+  console.log(this)
+
+  if (!this.over()) {
     requestAnimFrame(animate); // This allows me to use frames!
     game.background.draw();
     game.obstacle.spawn();
@@ -370,7 +372,7 @@ window.requestAnimFrame = (function() {
     window.oRequestAnimationFrame ||
     window.msRequestAnimationFrame ||
     function( /* function */ callback, /* DOMElement */ element) {
-      window.setTimeout(callback, 1000 / 60);
+      window.setTimeout(this.callback.bind(this), 1000 / 60);
     };
 })();
 
