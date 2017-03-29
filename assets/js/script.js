@@ -17,6 +17,7 @@ function init() {
  * Creates the Game Variables
  ***************************************************/
 var para = {
+	debugger: 0,
   gameState: 0,
   pool: [],
   speedMultiplier: 0.01,
@@ -34,10 +35,11 @@ var imageRepository = new function() {
   this.background = new Image()
   this.runner = new Image()
   this.bush = new Image()
+	this.burrow = new Image()
   // 	this.bullet = new Image()
 
   // Ensure all images have loaded before starting the game
-  var numImages = 3;
+  var numImages = 4;
   var numLoaded = 0;
 
   function imageLoaded() {
@@ -55,12 +57,16 @@ var imageRepository = new function() {
   }
   this.bush.onload = function() {
     imageLoaded()
+	}
+	this.burrow.onload = function() {
+		imageLoaded()
   }
 
   // Set images src
   this.background.src = "assets/images/background.png";
   this.runner.src = "assets/images/avatar.png"
   this.bush.src = "assets/images/bush3.png"
+	this.burrow.src = "assets/images/burrow.png"
   // adding obstacles for LATER
 }
 
@@ -160,9 +166,8 @@ function Game() {
       if (para.pool.length === 0) {
         this.y = getRandomArbitrary(0, 93)
         para.pool.push(this.y)
-        // console.log('spawned: '+this.y)
-        // console.log('obstacle pool: '+para.pool.length)
       }
+
       this.speed += para.speedMultiplier
       this.canvasWidth += 1
       $('background').css("width", this.canvasWidth)
@@ -183,12 +188,14 @@ function Game() {
       this.context.fillText(scoreWithZeros, 515, 20);
       // Debugger Collision Box
       // ****************
-      this.context.fillStyle = '#80FFFFFF'
-      this.context.fillRect(this.x + this.width, this.y + this.height, this.width, this.height);
+			if (para.debugger) {
+				this.context.fillStyle = '#80FFFFFF'
+				this.context.fillRect(this.x + this.width, this.y + this.height, this.width, this.height);
+			}
       // console.log(pool,this.x)
       // If the image scrolled off the screen, reset
       if (this.x <= -(this.width) - 50) {
-        this.x = getRandomArbitrary(900, 1500)
+        this.x = getRandomArbitrary(900, 3000)
         para.pool.pop()
         console.log('obstacle pool:' + para.pool.length)
       }
@@ -216,9 +223,14 @@ function Game() {
     // this.walkAnim  = new Animation(player.sheet, 4, 0, 15);
     // this.anim      = this.walkAnim;
     this.draw = function() {
-      // this.context.fillRect(this.x,this.y,this.width,this.height);
-      this.context.drawImage(imageRepository.runner, this.x, this.y);
-      // console.log(this.y)
+
+			if (this.isDucking) {
+			this.context.drawImage(imageRepository.burrow, this.x, this.y)
+			}
+			else this.context.drawImage(imageRepository.runner, this.x, this.y)
+			if (para.debugger) {
+				this.context.fillRect(this.x,this.y,this.width,this.height);
+			}
     };
     this.update = function() {
       // jump if not currently jumping or falling
