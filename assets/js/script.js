@@ -203,7 +203,7 @@ function Game() {
     };
 
   }
-  // Set Background to inherit properties from Drawable
+  // // Set Background to inherit properties from Drawable
   Background.prototype = new Drawable();
   runner.prototype = new Drawable();
 
@@ -335,7 +335,7 @@ function Game() {
 function animate() {
   console.log(this)
 
-  if (!this.over()) {
+  if (!game.over()) {
     requestAnimFrame(animate); // This allows me to use frames!
     game.background.draw();
     game.obstacle.spawn();
