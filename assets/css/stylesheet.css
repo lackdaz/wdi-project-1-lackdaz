@@ -44,14 +44,16 @@ h2 {
 
 #game-over {
   display: none;
-  margin-top: -160px;
   text-align: center;
-  padding-top: 40px;
-  z-index: 2;
-  width: 600px;
-  height: 360px;
-  position: absolute;
+  z-index: 3;
+  width: 280px;
+  height: 100px;
+  position: relative;
+	margin: -22% auto;
+	padding: 5px 30px 15px 20px;
   font-size: 3vmin;
+  border-radius: 15px;
+  background-color: rgba(155,155,155,0.3);
 }
 
 #main-message {
