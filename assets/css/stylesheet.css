@@ -25,8 +25,8 @@ body {
 
 #game-over {
   display: none;
-  text-align: center;
   margin-top: -160px;
+  text-align: center;
   padding-top: 40px;
   z-index: 2;
   width: 600px;

@@ -17,13 +17,12 @@ function init() {
  * Creates the Game Variables
  ***************************************************/
 var para = {
-  debugger: 1,
+	debugger: 0,
   gameState: 0,
   pool: [],
   speedMultiplier: 0.01,
   score: 0,
-  hscore: 0,
-  CollisionAdjFactor: 0.3
+  hscore: 0
 }
 
 /**
@@ -33,10 +32,12 @@ var para = {
  */
 var imageRepository = new function() {
   // Define images
+
   this.background = new Image()
   this.runner = new Image()
   this.drone = new Image()
-  this.burrow = new Image()
+	this.burrow = new Image()
+  this.garbage = new Image()
   // 	this.bullet = new Image()
 
   // Ensure all images have loaded before starting the game
@@ -58,8 +59,11 @@ var imageRepository = new function() {
   }
   this.drone.onload = function() {
     imageLoaded()
+	}
+	this.burrow.onload = function() {
+		imageLoaded()
   }
-  this.burrow.onload = function() {
+  this.garbage.onload = function() {
     imageLoaded()
   }
 
@@ -67,8 +71,9 @@ var imageRepository = new function() {
   this.background.src = "assets/images/background.png";
   this.runner.src = "assets/images/avatar.png"
   this.drone.src = "assets/images/drone.png"
-  this.burrow.src = "assets/images/burrow.png"
-  // adding obstacles for LATER
+	this.burrow.src = "assets/images/burrow.png"
+  this.garbage.src = "assets/images/garbage.gif"
+
 }
 
 /***************************************************
@@ -78,7 +83,6 @@ var imageRepository = new function() {
  * functions.
  ***************************************************/
 function Drawable() {
-  // for passing properties to constructors
   this.init = function(x, y, width, height) {
     // Default variables
     this.x = x;
@@ -86,15 +90,8 @@ function Drawable() {
     this.width = width;
     this.height = height;
   }
-  // for making collision boxes smaller
-  this.adj = function(x, y, width, height) {
-    // Default variables
-    this.x = x;
-    this.y = y;
-    this.width = width * para.CollisionAdjFactor;
-    this.height = height * para.CollisionAdjFactor;
-  }
 }
+
 /***************************************************
 Parent Game Constructor - Ianitializes everything once
 ***************************************************/
@@ -106,7 +103,6 @@ function Game() {
    * is not. This is to stop the animation script from constantly
    * running on browsers that do not support the canvas.
    */
-
   this.init = function() {
     // Get the canvas elements
     this.canvas = document.getElementById('canvas');
@@ -120,23 +116,24 @@ function Game() {
       Background.prototype.context = this.canvasCtx;
       Background.prototype.canvasWidth = this.canvas.width;
       Background.prototype.canvasHeight = this.canvas.height;
-
       Runner.prototype.context = this.canvasCtx;
       Runner.prototype.canvasWidth = this.canvas.width;
       Runner.prototype.canvasHeight = this.canvas.height;
+
 
       // Initialize the background object
       this.background = new Background(1);
       this.background.init(0, 0); // Set draw point to 0,0
 
-      // Initialize the runner object and make collision boxes smaller
+
+      // Initialize the Runner object
       this.runner = new Runner();
-      this.runner.adj(10, 100, imageRepository.runner.width,
+      this.runner.init(10, 100, imageRepository.runner.width,
         imageRepository.runner.height);
 
-      // Initializing obstacles in background and make collision boxes smaller
+      // Initializiling obstacles in background
       this.obstacle = new Background(4);
-      this.obstacle.adj(-200, 0, imageRepository.drone.width, imageRepository.drone.height)
+      this.obstacle.init(-200, 0, imageRepository.drone.width / 3, imageRepository.drone.height / 3)
 
 
       return true;
@@ -149,6 +146,10 @@ function Game() {
   // // Set Background to inherit properties from Drawable
   Background.prototype = new Drawable();
   Runner.prototype = new Drawable();
+
+
+
+
 
   // Start the animation loop
   this.start = function() {
@@ -184,10 +185,11 @@ function Game() {
 }
 
 /***************************************************
-Avatar Constructor, Child of Game Constructor
+Avatar Constructor
 ***************************************************/
 function Runner() {
   // adding properties directly to runner imported object
+
   this.gravity = 0.5
   this.dy = 0;
   this.jumpDy = -9;
@@ -198,17 +200,13 @@ function Runner() {
   // this.walkAnim  = new Animation(player.sheet, 4, 0, 15);
   // this.anim      = this.walkAnim;
   this.draw = function() {
-    console.log(this.width, this.height)
 
     if (this.isDucking) {
-      this.context.drawImage(imageRepository.burrow, this.x, this.y)
-    } else this.context.drawImage(imageRepository.runner, this.x, this.y)
-
-
-
+    this.context.drawImage(imageRepository.burrow, this.x, this.y)
+    }
+    else this.context.drawImage(imageRepository.runner, this.x, this.y)
     if (para.debugger) {
-      // console.log(this.width,this.height)
-      this.context.fillRect(this.x + this.width, this.y + this.height, this.width, this.height);
+      this.context.fillRect(this.x,this.y,this.width,this.height);
     }
   };
   this.keypress = function() {
@@ -221,14 +219,14 @@ function Runner() {
 
     if (KEY_STATUS.down) {
       this.isDucking = true;
-      this.width = imageRepository.burrow.width * para.CollisionAdjFactor
-      this.height = imageRepository.burrow.height * para.CollisionAdjFactor
+      this.width = 59
+      this.height = 22
       this.y = 93 + 25
     }
     if (!KEY_STATUS.down && !this.isJumping) {
       this.isDucking = false;
-      this.width = imageRepository.runner.width * para.CollisionAdjFactor
-      this.height = imageRepository.runner.height * para.CollisionAdjFactor
+      this.width = 44
+      this.height = 47
       this.y = 93
     }
 
@@ -239,19 +237,6 @@ function Runner() {
     if (this.isFalling || this.isJumping) {
       this.dy += this.gravity;
     }
-    // // change animation if falling
-    // if (this.dy > 0) {
-    //   this.anim = this.fallAnim;
-    // }
-    // // change animation is jumping
-    // else if (this.dy < 0) {
-    //   this.anim = this.jumpAnim;
-    // }
-    // else {
-    //   this.anim = this.walkAnim;
-    // }
-
-    // this.anim.keypress();
 
     if (this.y >= 93) {
       this.isJumping = false;
@@ -292,6 +277,7 @@ function Background(speed) {
   };
 
   this.spawn = function() {
+
     // spawn an obstacle
     if (para.pool.length === 0) {
       this.y = getRandomArbitrary(0, 93)
@@ -316,7 +302,6 @@ function Background(speed) {
       this.context.fillText("HI " + hscoreWithZeros, 400, 20);
     }
     this.context.fillText(scoreWithZeros, 515, 20);
-
     // Debugger Collision Box
     // ****************
     if (para.debugger) {
@@ -328,7 +313,7 @@ function Background(speed) {
     if (this.x <= -(this.width) - 50) {
       this.x = getRandomArbitrary(900, 3000)
       para.pool.pop()
-      console.log('obstacle pool:' + para.pool.length)
+      // console.log('obstacle pool:' + para.pool.length)
     }
 
   };
@@ -340,7 +325,6 @@ function Background(speed) {
  **********************************************/
 
 function animate() {
-
   if (!game.over()) {
     requestAnimFrame(animate); // This allows me to use frames!
     game.runner.clear();
@@ -351,6 +335,8 @@ function animate() {
     para.score += 0.5
 
   }
+  // console.log(game.runner.x,game.runner.y)
+  // console.log(testCollision(game.runner,game.obstacle))
   if (testCollision(game.runner, game.obstacle)) {
     console.log(game.obstacle.y)
     para.gameState = 1
@@ -395,8 +381,8 @@ testCollisionRectRect = function(rect1, rect2) {
 
 function testCollision(object1, object2) {
   var rect1 = { // runner
-    x: object1.x + object1.width, //translate to center
-    y: object1.y + object1.height, //translate to center
+    x: object1.x - 10, // finds top left x point
+    y: object1.y, // finds top left y point
     width: object1.width,
     height: object1.height,
   }
