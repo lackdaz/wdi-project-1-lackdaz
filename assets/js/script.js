@@ -9,20 +9,20 @@ var game = new Game();
 function init() {
   if (game.init()) // game constructor init method
 
-    $("#main-message").hide();
-  game.start();
+    // $("#main-message").hide();
+    game.start();
 }
 
 /***************************************************
  * Creates the Game Variables
  ***************************************************/
 var para = {
-	debugger: 0,
+  debugger: 0,
   gameState: 0,
-  obstacleType:
-  ['garbage',
-  'drone',
-  'bigbus'],
+  obstacleType: ['garbage',
+    'drone',
+    'bigbus'
+  ],
   pool: [],
   speedMultiplier: 0.01,
   score: 0,
@@ -30,6 +30,9 @@ var para = {
 }
 
 /**
+
+
+
  * Define an object to hold all our images for the game so images
  * are only ever created once. This type of object is known as a
  * singleton.
@@ -40,7 +43,7 @@ var imageRepository = new function() {
   this.background = new Image()
   this.runner = new Image()
   this.drone = new Image()
-	this.burrow = new Image()
+  this.burrow = new Image()
   this.garbage = new Image()
   this.bigbus = new Image()
 
@@ -65,9 +68,9 @@ var imageRepository = new function() {
   }
   this.drone.onload = function() {
     imageLoaded()
-	}
-	this.burrow.onload = function() {
-		imageLoaded()
+  }
+  this.burrow.onload = function() {
+    imageLoaded()
   }
   this.garbage.onload = function() {
     imageLoaded()
@@ -79,7 +82,7 @@ var imageRepository = new function() {
   this.background.src = "assets/images/background.png";
   this.runner.src = "assets/images/avatar.png"
   this.drone.src = "assets/images/drone.png"
-	this.burrow.src = "assets/images/burrow.png"
+  this.burrow.src = "assets/images/burrow.png"
   this.garbage.src = "assets/images/garbage.gif"
   this.bigbus.src = "assets/images/bigbus.gif"
 }
@@ -204,16 +207,26 @@ function Runner() {
   this.draw = function() {
 
     if (this.isDucking) {
-    this.context.drawImage(imageRepository.burrow, this.x, this.y)
-    }
-    else this.context.drawImage(imageRepository.runner, this.x, this.y)
+      this.context.drawImage(imageRepository.burrow, this.x, this.y)
+    } else this.context.drawImage(imageRepository.runner, this.x, this.y)
     if (para.debugger) {
-      this.context.fillRect(this.x,this.y,this.width,this.height);
+      this.context.fillRect(this.x, this.y, this.width, this.height);
     }
+    this.context.font = "20px Inconsolata";
+    this.context.textAlign = "topright";
+    if (para.score <= 999999) {
+      var scoreWithZeros = ("00000" + Math.floor(para.score)).slice(-6)
+    }
+    if (para.hscore) {
+      var hscoreWithZeros = ("00000" + Math.floor(para.hscore)).slice(-6)
+      this.context.fillText("HI " + hscoreWithZeros, 400, 20);
+    }
+    this.context.fillText(scoreWithZeros, 515, 20);
+    para.score += 0.5
   };
   this.keypress = function() {
     // jump if not currently jumping or falling
-    if (KEY_STATUS.space && this.dy === 0 && !this.isJumping) {
+    if ((KEY_STATUS.space || KEY_STATUS.up) && this.dy === 0 && !this.isJumping) {
       this.isJumping = true;
       this.dy = this.jumpDy;
     }
@@ -243,6 +256,8 @@ function Runner() {
       this.isFalling = false;
       this.dy = 0;
     }
+
+
   };
 
   /***************************************************
@@ -258,7 +273,7 @@ function Runner() {
  * the Drawable object. The background is drawn on the "background"
  * canvas and creates the illusion of moving by panning the image.
  ***************************************************/
-function Background(speed,width,height) {
+function Background(speed, width, height) {
   this.speed = speed; // Redefine speed of the background for panning
 
   // Implement abstract function
@@ -287,17 +302,6 @@ function Background(speed,width,height) {
     this.x -= this.speed; //reverse this to move left
     // console.log(this.y)
 
-    this.context.font = "20px Inconsolata";
-    this.context.textAlign = "topright";
-    if (para.score <= 999999) {
-      var scoreWithZeros = ("00000" + Math.floor(para.score)).slice(-6)
-    }
-    if (para.hscore) {
-      var hscoreWithZeros = ("00000" + Math.floor(para.hscore)).slice(-6)
-      this.context.fillText("HI " + hscoreWithZeros, 400, 20);
-    }
-    this.context.fillText(scoreWithZeros, 515, 20);
-
     // Debugger Collision Box
     // ****************
     if (para.debugger) {
@@ -310,13 +314,13 @@ function Background(speed,width,height) {
     // If the image scrolled off the screen, reset
     if (this.x <= -(this.width) - 50) {
       para.pool.unshift()
-      var index = getRandomArbitrary(0,para.obstacleType.length-1)
+      var index = getRandomArbitrary(0, para.obstacleType.length - 1)
       para.pool.push(para.obstacleType[index])
       if (para.obstacleType[index] === 'drone') {
         //drones fly do they?
         this.y = getRandomArbitrary(22, 93)
       }
-        //garbage cans don't fly
+      //garbage cans don't fly
       else this.y = getRandomArbitrary(93, 93)
       // generate random gap
       this.x = getRandomArbitrary(900, 3000)
@@ -325,18 +329,18 @@ function Background(speed,width,height) {
     /*
     WIP code (Bad, bad code-but-works)
     */
-    console.log(para.pool[para.pool.length-1])
-    switch (para.pool[para.pool.length-1]) {
+    console.log(para.pool[para.pool.length - 1])
+    switch (para.pool[para.pool.length - 1]) {
       case 'drone':
-      this.obstacle = new Background(4);
-      this.obstacle.init(this.x, this.y,imageRepository.drone.width,imageRepository.drone.height)
-      this.context.drawImage(imageRepository.drone, this.x, this.y);
-      break;
+        this.obstacle = new Background(4);
+        this.obstacle.init(this.x, this.y, imageRepository.drone.width, imageRepository.drone.height)
+        this.context.drawImage(imageRepository.drone, this.x, this.y);
+        break;
       case 'garbage':
-      this.obstacle = new Background(4);
-      this.obstacle.init(this.x, this.y,imageRepository.garbage.width,imageRepository.garbage.height)
-      this.context.drawImage(imageRepository.garbage, this.x, this.y);
-      break;
+        this.obstacle = new Background(4);
+        this.obstacle.init(this.x, this.y, imageRepository.garbage.width, imageRepository.garbage.height)
+        this.context.drawImage(imageRepository.garbage, this.x, this.y);
+        break;
     }
 
 
@@ -358,7 +362,7 @@ function animate() {
     game.obstacle.spawn();
     game.runner.keypress();
     game.runner.draw();
-    para.score += 0.5
+
 
   }
   // console.log(game.runner.x,game.runner.y)

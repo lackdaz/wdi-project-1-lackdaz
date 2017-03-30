@@ -14,27 +14,32 @@
 </head>
 
 <body>
-  <h1>SAVE THE PANGOLIN</h1>
+  <h2>SAVE THE PANGOLIN</h1>
   <div class="container">
     <!-- The canvas for the panning background -->
     <canvas id="canvas" width="600" height="150">
 			Your browser does not support canvas. Please try again with a different browser.
 		</canvas>
-    <div id="main-message" jstcache="0">
-            <h1 jsselect="heading" jsvalues=".innerHTML:msg" jstcache="5">There is no Internet connection</h1>
-            <p jsselect="summary" jsvalues=".innerHTML:msg" jstcache="2">There is no Internet connection</p>
-            <div id="suggestions-list" jsdisplay="(suggestionsSummaryList &amp;&amp; suggestionsSummaryList.length)" jstcache="6">
-              <p jsvalues=".innerHTML:suggestionsSummaryListHeader" jstcache="13">Try:</p>
-              <ul jsvalues=".className:suggestionsSummaryList.length == 1 ? 'single-suggestion' : ''" jstcache="14" class="">
-                <li jsselect="suggestionsSummaryList" jsvalues=".innerHTML:summary" jstcache="15" jsinstance="0">Checking the network cables, modem, and router</li><li jsselect="suggestionsSummaryList" jsvalues=".innerHTML:summary" jstcache="15" jsinstance="1">Reconnecting to Wi-Fi</li><li jsselect="suggestionsSummaryList" jsvalues=".innerHTML:summary" jstcache="15" jsinstance="*2"><a href="javascript:diagnoseErrors()" id="diagnose-link" jstcache="0">Running Network Diagnostics</a></li>
-              </ul>
-            </div>
-            <div class="error-code" jscontent="errorCode" jstcache="7">ERR_INTERNET_DISCONNECTED</div>
-            <div id="diagnose-frame" class="hidden" jstcache="0"></div>
-          </div>
     <div id="game-over">
-      <h2>You ran <span id="score"></span> meters!</h2>
+      <p>You ran <span id="score"></span> meters!</p>
       <a href="javascript:void(0)" class="button restart">Try again?</a>
+    </div>
+    <div id="instructions">
+      <h3>Instructions</h3><p>UP/Spacebar for JUMP<br>DOWN for duck<br>Avioid all obstacles and keep running!</p>
+    </div>
+    <div id="main-message" jstcache="0">
+      <h1 jsselect="heading" jsvalues=".innerHTML:msg" jstcache="5">There is no Internet connection</h1>
+      <p jsselect="summary" jsvalues=".innerHTML:msg" jstcache="2">There is no Internet connection</p>
+      <div id="suggestions-list" jsdisplay="(suggestionsSummaryList &amp;&amp; suggestionsSummaryList.length)" jstcache="6">
+        <p jsvalues=".innerHTML:suggestionsSummaryListHeader" jstcache="13">Try:</p>
+        <ul jsvalues=".className:suggestionsSummaryList.length == 1 ? 'single-suggestion' : ''" jstcache="14" class="">
+          <li jsselect="suggestionsSummaryList" jsvalues=".innerHTML:summary" jstcache="15" jsinstance="0">Checking the network cables, modem, and router</li>
+          <li jsselect="suggestionsSummaryList" jsvalues=".innerHTML:summary" jstcache="15" jsinstance="1">Reconnecting to Wi-Fi</li>
+          <li jsselect="suggestionsSummaryList" jsvalues=".innerHTML:summary" jstcache="15" jsinstance="*2"><a href="javascript:diagnoseErrors()" id="diagnose-link" jstcache="0">Running Network Diagnostics</a></li>
+        </ul>
+      </div>
+      <div class="error-code" jscontent="errorCode" jstcache="7">ERR_INTERNET_DISCONNECTED</div>
+      <div id="diagnose-frame" class="hidden" jstcache="0"></div>
     </div>
   </div>
   <script src="assets/js/script.js" charset="utf-8"></script>

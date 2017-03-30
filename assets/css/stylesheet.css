@@ -2,17 +2,20 @@ body {
   margin: 0 auto;
   text-align: center;
   font-family: 'Inconsolata', monospace;
+  font-size: 2 font-size: 3vmin;
+  vmin;
 }
 
 .container {
   margin: 0 auto;
   justify-content: center;
+  font-size: 2vmin;
   width: 600px;
   height: 150px;
   position: relative;
 }
 
-h1 {
+h2 {
   font-size: 5.9vw;
 }
 
@@ -27,6 +30,18 @@ h1 {
   box-sizing: border-box;
 }
 
+#instructions {
+  opacity: 0;
+  margin-top: -200px;
+  text-align: center;
+  padding-top: 40px;
+  z-index: 2;
+  width: 600px;
+  height: 360px;
+  position: absolute;
+  font-size: 3vmin;
+}
+
 #game-over {
   display: none;
   margin-top: -160px;
@@ -36,11 +51,11 @@ h1 {
   width: 600px;
   height: 360px;
   position: absolute;
+  font-size: 3vmin;
 }
 
 #main-message {
-  font-family:
-  display: block;
+  font-family: display: none;
   text-align: left;
   box-sizing: border-box;
   font-size: 1em;
@@ -48,4 +63,35 @@ h1 {
   margin: 50px auto 0;
   max-width: 600px;
   width: 100%;
+}
+
+@keyframes fadeout {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes fadein {
+  0% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+#main-message {
+  animation: fadeout 2s 1;
+  animation-fill-mode: forwards
+}
+
+#instructions {
+  animation: fadein 3s 2;
+  animation-fill-mode: forwards
 }
