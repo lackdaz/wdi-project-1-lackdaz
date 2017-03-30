@@ -17,12 +17,13 @@ function init() {
  * Creates the Game Variables
  ***************************************************/
 var para = {
-	debugger: 0,
+  debugger: 1,
   gameState: 0,
   pool: [],
   speedMultiplier: 0.01,
   score: 0,
-  hscore: 0
+  hscore: 0,
+  CollisionAdjFactor: 0.3
 }
 
 /**
@@ -34,8 +35,8 @@ var imageRepository = new function() {
   // Define images
   this.background = new Image()
   this.runner = new Image()
-  this.bush = new Image()
-	this.burrow = new Image()
+  this.drone = new Image()
+  this.burrow = new Image()
   // 	this.bullet = new Image()
 
   // Ensure all images have loaded before starting the game
@@ -55,18 +56,18 @@ var imageRepository = new function() {
   this.runner.onload = function() {
     imageLoaded()
   }
-  this.bush.onload = function() {
+  this.drone.onload = function() {
     imageLoaded()
-	}
-	this.burrow.onload = function() {
-		imageLoaded()
+  }
+  this.burrow.onload = function() {
+    imageLoaded()
   }
 
   // Set images src
   this.background.src = "assets/images/background.png";
   this.runner.src = "assets/images/avatar.png"
-  this.bush.src = "assets/images/bush3.png"
-	this.burrow.src = "assets/images/burrow.png"
+  this.drone.src = "assets/images/drone.png"
+  this.burrow.src = "assets/images/burrow.png"
   // adding obstacles for LATER
 }
 
@@ -77,6 +78,7 @@ var imageRepository = new function() {
  * functions.
  ***************************************************/
 function Drawable() {
+  // for passing properties to constructors
   this.init = function(x, y, width, height) {
     // Default variables
     this.x = x;
@@ -84,8 +86,15 @@ function Drawable() {
     this.width = width;
     this.height = height;
   }
+  // for making collision boxes smaller
+  this.adj = function(x, y, width, height) {
+    // Default variables
+    this.x = x;
+    this.y = y;
+    this.width = width * para.CollisionAdjFactor;
+    this.height = height * para.CollisionAdjFactor;
+  }
 }
-
 /***************************************************
 Parent Game Constructor - Ianitializes everything once
 ***************************************************/
@@ -97,39 +106,37 @@ function Game() {
    * is not. This is to stop the animation script from constantly
    * running on browsers that do not support the canvas.
    */
+
   this.init = function() {
     // Get the canvas elements
-    this.bgCanvas = document.getElementById('background');
-    this.runnerCanvas = document.getElementById('pangolin');
+    this.canvas = document.getElementById('canvas');
 
     // Test to see if canvas is supported by browser. Only need to
     // check one canvas
-    if (this.bgCanvas.getContext) {
-      this.bgContext = this.bgCanvas.getContext('2d');
-      this.runnerContext = this.runnerCanvas.getContext('2d');
+    if (this.canvas.getContext) {
+      this.canvasCtx = this.canvas.getContext('2d');
 
       // Prototypal Inheritance
-      Background.prototype.context = this.bgContext;
-      Background.prototype.canvasWidth = this.bgCanvas.width;
-      Background.prototype.canvasHeight = this.bgCanvas.height;
-      runner.prototype.context = this.runnerContext;
-      runner.prototype.canvasWidth = this.runnerCanvas.width;
-      runner.prototype.canvasHeight = this.runnerCanvas.height;
+      Background.prototype.context = this.canvasCtx;
+      Background.prototype.canvasWidth = this.canvas.width;
+      Background.prototype.canvasHeight = this.canvas.height;
 
+      Runner.prototype.context = this.canvasCtx;
+      Runner.prototype.canvasWidth = this.canvas.width;
+      Runner.prototype.canvasHeight = this.canvas.height;
 
       // Initialize the background object
       this.background = new Background(1);
       this.background.init(0, 0); // Set draw point to 0,0
 
-
-      // Initialize the runner object
-      this.runner = new runner();
-      this.runner.init(10, 100, imageRepository.runner.width,
+      // Initialize the runner object and make collision boxes smaller
+      this.runner = new Runner();
+      this.runner.adj(10, 100, imageRepository.runner.width,
         imageRepository.runner.height);
 
-      // Initializiling obstacles in background
+      // Initializing obstacles in background and make collision boxes smaller
       this.obstacle = new Background(4);
-      this.obstacle.init(-200, 0, imageRepository.bush.width / 3, imageRepository.bush.height / 3)
+      this.obstacle.adj(-200, 0, imageRepository.drone.width, imageRepository.drone.height)
 
 
       return true;
@@ -138,159 +145,10 @@ function Game() {
     }
   };
 
-  /***************************************************
-   * Creates the Background object which will become a child of
-   * the Drawable object. The background is drawn on the "background"
-   * canvas and creates the illusion of moving by panning the image.
-   ***************************************************/
-  function Background(speed) {
-    this.speed = speed; // Redefine speed of the background for panning
 
-    // Implement abstract function
-    this.draw = function() {
-      // Pan background
-      this.x -= this.speed; //reverse this to move left
-      this.speed += para.speedMultiplier
-      this.context.drawImage(imageRepository.background, this.x, this.y);
-
-      // Draw another image at the right edge of the first image
-      this.context.drawImage(imageRepository.background, this.x - this.canvasWidth, this.y);
-
-      // If the image scrolled off the screen, reset
-      if (this.x <= -(this.canvasWidth))
-        this.x = 0;
-    };
-
-    this.spawn = function() {
-      // spawn an obstacle
-      if (para.pool.length === 0) {
-        this.y = getRandomArbitrary(0, 93)
-        para.pool.push(this.y)
-      }
-
-      this.speed += para.speedMultiplier
-      this.canvasWidth += 1
-      $('background').css("width", this.canvasWidth)
-      // console.log(this.canvasWidth)
-      this.x -= this.speed; //reverse this to move left
-      this.context.drawImage(imageRepository.bush, this.x, this.y);
-      // console.log(this.y)
-
-      this.context.font = "20px Inconsolata";
-      this.context.textAlign = "topright";
-      if (para.score <= 999999) {
-        var scoreWithZeros = ("00000" + Math.floor(para.score)).slice(-6)
-      }
-      if (para.hscore) {
-        var hscoreWithZeros = ("00000" + Math.floor(para.hscore)).slice(-6)
-        this.context.fillText("HI " + hscoreWithZeros, 400, 20);
-      }
-      this.context.fillText(scoreWithZeros, 515, 20);
-      // Debugger Collision Box
-      // ****************
-			if (para.debugger) {
-				this.context.fillStyle = '#80FFFFFF'
-				this.context.fillRect(this.x + this.width, this.y + this.height, this.width, this.height);
-			}
-      // console.log(pool,this.x)
-      // If the image scrolled off the screen, reset
-      if (this.x <= -(this.width) - 50) {
-        this.x = getRandomArbitrary(900, 3000)
-        para.pool.pop()
-        console.log('obstacle pool:' + para.pool.length)
-      }
-
-    };
-
-  }
   // // Set Background to inherit properties from Drawable
   Background.prototype = new Drawable();
-  runner.prototype = new Drawable();
-
-  /***************************************************
-  Avatar Constructor, Child of Game Constructor
-  ***************************************************/
-  function runner() {
-    // adding properties directly to runner imported object
-
-    this.gravity = 0.5
-    this.dy = 0;
-    this.jumpDy = -9;
-    this.isFalling = false;
-    this.isJumping = false;
-    this.isDucking = false;
-    // this.sheet     = new SpriteSheet("---.png", this.width, this.height);
-    // this.walkAnim  = new Animation(player.sheet, 4, 0, 15);
-    // this.anim      = this.walkAnim;
-    this.draw = function() {
-
-			if (this.isDucking) {
-			this.context.drawImage(imageRepository.burrow, this.x, this.y)
-			}
-			else this.context.drawImage(imageRepository.runner, this.x, this.y)
-			if (para.debugger) {
-				this.context.fillRect(this.x,this.y,this.width,this.height);
-			}
-    };
-    this.update = function() {
-      // jump if not currently jumping or falling
-      if (KEY_STATUS.space && this.dy === 0 && !this.isJumping) {
-        this.isJumping = true;
-        this.dy = this.jumpDy;
-
-      }
-
-      if (KEY_STATUS.down) {
-        this.isDucking = true;
-        this.width = 59
-        this.height = 22
-        this.y = 93 + 25
-      }
-      if (!KEY_STATUS.down && !this.isJumping) {
-        this.isDucking = false;
-        this.width = 44
-        this.height = 47
-        this.y = 93
-      }
-
-
-      this.y += this.dy;
-
-      // add gravity
-      if (this.isFalling || this.isJumping) {
-        this.dy += this.gravity;
-      }
-      // // change animation if falling
-      // if (this.dy > 0) {
-      //   this.anim = this.fallAnim;
-      // }
-      // // change animation is jumping
-      // else if (this.dy < 0) {
-      //   this.anim = this.jumpAnim;
-      // }
-      // else {
-      //   this.anim = this.walkAnim;
-      // }
-
-      // this.anim.update();
-
-      if (this.y >= 93) {
-        this.isJumping = false;
-        this.isFalling = false;
-        this.dy = 0;
-      }
-    };
-
-    /***************************************************
-    This is the game clearing function
-    ***************************************************/
-    this.clear = function() {
-      this.context.clearRect(0, 0, this.canvasWidth, this.canvasHeight)
-    }
-
-  };
-
-
+  Runner.prototype = new Drawable();
 
   // Start the animation loop
   this.start = function() {
@@ -325,28 +183,174 @@ function Game() {
   });
 }
 
+/***************************************************
+Avatar Constructor, Child of Game Constructor
+***************************************************/
+function Runner() {
+  // adding properties directly to runner imported object
+  this.gravity = 0.5
+  this.dy = 0;
+  this.jumpDy = -9;
+  this.isFalling = false;
+  this.isJumping = false;
+  this.isDucking = false;
+  // this.sheet     = new SpriteSheet("---.png", this.width, this.height);
+  // this.walkAnim  = new Animation(player.sheet, 4, 0, 15);
+  // this.anim      = this.walkAnim;
+  this.draw = function() {
+    console.log(this.width, this.height)
+
+    if (this.isDucking) {
+      this.context.drawImage(imageRepository.burrow, this.x, this.y)
+    } else this.context.drawImage(imageRepository.runner, this.x, this.y)
 
 
+
+    if (para.debugger) {
+      // console.log(this.width,this.height)
+      this.context.fillRect(this.x + this.width, this.y + this.height, this.width, this.height);
+    }
+  };
+  this.keypress = function() {
+    // jump if not currently jumping or falling
+    if (KEY_STATUS.space && this.dy === 0 && !this.isJumping) {
+      this.isJumping = true;
+      this.dy = this.jumpDy;
+
+    }
+
+    if (KEY_STATUS.down) {
+      this.isDucking = true;
+      this.width = imageRepository.burrow.width * para.CollisionAdjFactor
+      this.height = imageRepository.burrow.height * para.CollisionAdjFactor
+      this.y = 93 + 25
+    }
+    if (!KEY_STATUS.down && !this.isJumping) {
+      this.isDucking = false;
+      this.width = imageRepository.runner.width * para.CollisionAdjFactor
+      this.height = imageRepository.runner.height * para.CollisionAdjFactor
+      this.y = 93
+    }
+
+
+    this.y += this.dy;
+
+    // add gravity
+    if (this.isFalling || this.isJumping) {
+      this.dy += this.gravity;
+    }
+    // // change animation if falling
+    // if (this.dy > 0) {
+    //   this.anim = this.fallAnim;
+    // }
+    // // change animation is jumping
+    // else if (this.dy < 0) {
+    //   this.anim = this.jumpAnim;
+    // }
+    // else {
+    //   this.anim = this.walkAnim;
+    // }
+
+    // this.anim.keypress();
+
+    if (this.y >= 93) {
+      this.isJumping = false;
+      this.isFalling = false;
+      this.dy = 0;
+    }
+  };
+
+  /***************************************************
+  This is the game clearing function
+  ***************************************************/
+  this.clear = function() {
+    this.context.clearRect(0, 0, this.canvasWidth, this.canvasHeight)
+  }
+
+};
+/***************************************************
+ * Creates the Background object which will become a child of
+ * the Drawable object. The background is drawn on the "background"
+ * canvas and creates the illusion of moving by panning the image.
+ ***************************************************/
+function Background(speed) {
+  this.speed = speed; // Redefine speed of the background for panning
+
+  // Implement abstract function
+  this.draw = function() {
+    // Pan background
+    this.x -= this.speed; //reverse this to move left
+    this.speed += para.speedMultiplier
+    this.context.drawImage(imageRepository.background, this.x, this.y);
+
+    // Draw another image at the right edge of the first image
+    this.context.drawImage(imageRepository.background, this.x - this.canvasWidth, this.y);
+
+    // If the image scrolled off the screen, reset
+    if (this.x <= -(this.canvasWidth))
+      this.x = 0;
+  };
+
+  this.spawn = function() {
+    // spawn an obstacle
+    if (para.pool.length === 0) {
+      this.y = getRandomArbitrary(0, 93)
+      para.pool.push(this.y)
+    }
+
+    this.speed += para.speedMultiplier
+    this.canvasWidth += 1
+    $('background').css("width", this.canvasWidth)
+    // console.log(this.canvasWidth)
+    this.x -= this.speed; //reverse this to move left
+    this.context.drawImage(imageRepository.drone, this.x, this.y);
+    // console.log(this.y)
+
+    this.context.font = "20px Inconsolata";
+    this.context.textAlign = "topright";
+    if (para.score <= 999999) {
+      var scoreWithZeros = ("00000" + Math.floor(para.score)).slice(-6)
+    }
+    if (para.hscore) {
+      var hscoreWithZeros = ("00000" + Math.floor(para.hscore)).slice(-6)
+      this.context.fillText("HI " + hscoreWithZeros, 400, 20);
+    }
+    this.context.fillText(scoreWithZeros, 515, 20);
+
+    // Debugger Collision Box
+    // ****************
+    if (para.debugger) {
+      this.context.fillStyle = '#80FFFFFF'
+      this.context.fillRect(this.x + this.width, this.y + this.height, this.width, this.height);
+    }
+    // console.log(pool,this.x)
+    // If the image scrolled off the screen, reset
+    if (this.x <= -(this.width) - 50) {
+      this.x = getRandomArbitrary(900, 3000)
+      para.pool.pop()
+      console.log('obstacle pool:' + para.pool.length)
+    }
+
+  };
+
+}
 /***********************************************
  * The animation loop. Calls the requestAnimationFrame shim to
  * optimize the game loop and draws all game objects. This is a global function
  **********************************************/
 
 function animate() {
-  console.log(this)
 
   if (!game.over()) {
     requestAnimFrame(animate); // This allows me to use frames!
+    game.runner.clear();
     game.background.draw();
     game.obstacle.spawn();
-    game.runner.update();
-    game.runner.clear();
+    game.runner.keypress();
     game.runner.draw();
     para.score += 0.5
 
   }
-  // console.log(game.runner.x,game.runner.y)
-  // console.log(testCollision(game.runner,game.obstacle))
   if (testCollision(game.runner, game.obstacle)) {
     console.log(game.obstacle.y)
     para.gameState = 1
@@ -391,8 +395,8 @@ testCollisionRectRect = function(rect1, rect2) {
 
 function testCollision(object1, object2) {
   var rect1 = { // runner
-    x: object1.x - 10, // finds top left x point
-    y: object1.y, // finds top left y point
+    x: object1.x + object1.width, //translate to center
+    y: object1.y + object1.height, //translate to center
     width: object1.width,
     height: object1.height,
   }

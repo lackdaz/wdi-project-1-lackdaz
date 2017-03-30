@@ -4,3 +4,17 @@ Runner
 
 CollisionBox - 20
 Obstacle
+
+
+if (KEY_STATUS.down) {
+  this.isDucking = true;
+  this.width = imageRepository.burrow.width * para.CollisionAdjFactor
+  this.height = imageRepository.burrow.height * para.CollisionAdjFactor
+  this.y = 93 + 25
+}
+if (!KEY_STATUS.down && !this.isJumping) {
+  this.isDucking = false;
+  this.width = imageRepository.runner.width * para.CollisionAdjFactor
+  this.height = imageRepository.runner.height * para.CollisionAdjFactor
+  this.y = 93
+}
