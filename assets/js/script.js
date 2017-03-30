@@ -19,6 +19,10 @@ function init() {
 var para = {
 	debugger: 0,
   gameState: 0,
+  obstacleType:
+  ['garbage',
+  'drone',
+  'bigbus'],
   pool: [],
   speedMultiplier: 0.01,
   score: 0,
@@ -38,6 +42,8 @@ var imageRepository = new function() {
   this.drone = new Image()
 	this.burrow = new Image()
   this.garbage = new Image()
+  this.bigbus = new Image()
+
   // 	this.bullet = new Image()
 
   // Ensure all images have loaded before starting the game
@@ -66,16 +72,17 @@ var imageRepository = new function() {
   this.garbage.onload = function() {
     imageLoaded()
   }
-
+  this.bigbus.onload = function() {
+    imageLoaded()
+  }
   // Set images src
   this.background.src = "assets/images/background.png";
   this.runner.src = "assets/images/avatar.png"
   this.drone.src = "assets/images/drone.png"
 	this.burrow.src = "assets/images/burrow.png"
   this.garbage.src = "assets/images/garbage.gif"
-
+  this.bigbus.src = "assets/images/bigbus.gif"
 }
-
 /***************************************************
  * Creates the Drawable object which will be the base class for
  * all drawable objects in the game. Sets up default variables
@@ -91,7 +98,6 @@ function Drawable() {
     this.height = height;
   }
 }
-
 /***************************************************
 Parent Game Constructor - Ianitializes everything once
 ***************************************************/
@@ -133,8 +139,8 @@ function Game() {
 
       // Initializiling obstacles in background
       this.obstacle = new Background(4);
-      this.obstacle.init(-200, 0, imageRepository.drone.width / 3, imageRepository.drone.height / 3)
 
+      this.obstacle.init(-400, 0, imageRepository.drone.width / 3, imageRepository.drone.height / 3)
 
       return true;
     } else {
@@ -146,10 +152,6 @@ function Game() {
   // // Set Background to inherit properties from Drawable
   Background.prototype = new Drawable();
   Runner.prototype = new Drawable();
-
-
-
-
 
   // Start the animation loop
   this.start = function() {
@@ -172,7 +174,7 @@ function Game() {
     para.hscore = Math.max(para.hscore, Math.floor(para.score))
     para.score = 0
     game.background.speed = 1
-    game.obstacle.x = 1000
+    game.obstacle.x = -200
     game.obstacle.speed = 4
   }
 
@@ -214,7 +216,6 @@ function Runner() {
     if (KEY_STATUS.space && this.dy === 0 && !this.isJumping) {
       this.isJumping = true;
       this.dy = this.jumpDy;
-
     }
 
     if (KEY_STATUS.down) {
@@ -229,7 +230,6 @@ function Runner() {
       this.height = 47
       this.y = 93
     }
-
 
     this.y += this.dy;
 
@@ -258,7 +258,7 @@ function Runner() {
  * the Drawable object. The background is drawn on the "background"
  * canvas and creates the illusion of moving by panning the image.
  ***************************************************/
-function Background(speed) {
+function Background(speed,width,height) {
   this.speed = speed; // Redefine speed of the background for panning
 
   // Implement abstract function
@@ -279,17 +279,12 @@ function Background(speed) {
   this.spawn = function() {
 
     // spawn an obstacle
-    if (para.pool.length === 0) {
-      this.y = getRandomArbitrary(0, 93)
-      para.pool.push(this.y)
-    }
 
     this.speed += para.speedMultiplier
     this.canvasWidth += 1
     $('background').css("width", this.canvasWidth)
     // console.log(this.canvasWidth)
     this.x -= this.speed; //reverse this to move left
-    this.context.drawImage(imageRepository.drone, this.x, this.y);
     // console.log(this.y)
 
     this.context.font = "20px Inconsolata";
@@ -302,19 +297,50 @@ function Background(speed) {
       this.context.fillText("HI " + hscoreWithZeros, 400, 20);
     }
     this.context.fillText(scoreWithZeros, 515, 20);
+
     // Debugger Collision Box
     // ****************
     if (para.debugger) {
       this.context.fillStyle = '#80FFFFFF'
       this.context.fillRect(this.x + this.width, this.y + this.height, this.width, this.height);
     }
+
+
     // console.log(pool,this.x)
     // If the image scrolled off the screen, reset
     if (this.x <= -(this.width) - 50) {
+      para.pool.unshift()
+      var index = getRandomArbitrary(0,para.obstacleType.length-1)
+      para.pool.push(para.obstacleType[index])
+      if (para.obstacleType[index] === 'drone') {
+        //drones fly do they?
+        this.y = getRandomArbitrary(22, 93)
+      }
+        //garbage cans don't fly
+      else this.y = getRandomArbitrary(93, 93)
+      // generate random gap
       this.x = getRandomArbitrary(900, 3000)
-      para.pool.pop()
-      // console.log('obstacle pool:' + para.pool.length)
     }
+
+    /*
+    WIP code (Bad, bad code-but-works)
+    */
+    console.log(para.pool[para.pool.length-1])
+    switch (para.pool[para.pool.length-1]) {
+      case 'drone':
+      this.obstacle = new Background(4);
+      this.obstacle.init(this.x, this.y,imageRepository.drone.width,imageRepository.drone.height)
+      this.context.drawImage(imageRepository.drone, this.x, this.y);
+      break;
+      case 'garbage':
+      this.obstacle = new Background(4);
+      this.obstacle.init(this.x, this.y,imageRepository.garbage.width,imageRepository.garbage.height)
+      this.context.drawImage(imageRepository.garbage, this.x, this.y);
+      break;
+    }
+
+
+
 
   };
 
@@ -394,7 +420,6 @@ function testCollision(object1, object2) {
   }
   return testCollisionRectRect(rect1, rect2);
 }
-
 /***************************************************
 Keystroke Checker
 **************************************************/

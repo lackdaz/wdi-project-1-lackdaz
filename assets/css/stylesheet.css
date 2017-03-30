@@ -12,6 +12,10 @@ body {
   position: relative;
 }
 
+h1 {
+  font-size: 5.9vw;
+}
+
 #canvas {
   position: relative;
   border: 1px solid black;
@@ -45,9 +49,3 @@ body {
   max-width: 600px;
   width: 100%;
 }
-/*canvas {
-  position: absolute;
-  top: 0px;
-  left: 0px;
-  background: transparent;
-}*/
