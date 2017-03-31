@@ -53,3 +53,6 @@ UP/SPACEBAR - JUMP
 * Add trailing obstacle movement towards the player
 * I eventually found the assets to the actual game(too late for this submission), should have researched more - had to do a lot of reinventing of the wheel.
 * Randomized Terrain Generation
+
+## What I would've done differently
+* Instructor feedback - singletons, OOP and module pattern not working. Focus on one!
